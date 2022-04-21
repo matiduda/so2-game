@@ -1,0 +1,25 @@
+	Server's PID: 1370
+
+	Campsite X/Y: 23/11
+	Round number: 32234
+
+	Parameter:   Player1  Player2  Player3  Player4 
+	PID          1390     1420     1900     -
+	Type         CPU      CPU      HUMAN    -
+	Curr X/Y     37/15    16/21    04/03    --/--
+	Deaths       3        9        0        -
+
+	Coins
+		carried  30       213      0
+		brought  1300     33       0
+
+	Legend: 
+	
+	1234 - players
+	█    - wall
+	#    - bushes (slow down)
+	*    - wild beast
+	c    - one coin                  D – dropped treasure 
+	t    - treasure (10 coins)
+	T    - large treasure (50 coins)
+	A    - campsite
