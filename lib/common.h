@@ -1,7 +1,8 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#include <stdio.h>
+// Header file for both server and client
+
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
@@ -15,11 +16,6 @@
 
 #define FILENAME_SIZE 20
 #define FILEPACK_SIZE 256
-
-#define FIFO_LOCATION_FOLDER "./pipes"
-#define FIFO_NAME "connect_client"
-#define LEN 256
-
 
 // struct payload_t
 // {

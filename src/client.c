@@ -1,25 +1,7 @@
 #include "../lib/common.h"
-
-
-
-// TEST
-
-int kbhit(void)
-{
-    int ch = getch();
-
-    if (ch != ERR) {
-        ungetch(ch);
-        return 1;
-    } else {
-        return 0;
-    }
-}
-
+#include "../lib/client_func.h"
 
 int main(int argc, char *argv) {
-
-
 
     initscr();
     cbreak();
