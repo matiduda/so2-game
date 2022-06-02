@@ -19,7 +19,7 @@
 #define PAYLIAD_SIZE sizeof(payload)
 
 // World parameters
-#define WORLD_SIZE 128
+#define MAX_WORLD_SIZE 128
 
 typedef struct payload_t
 {
@@ -28,5 +28,10 @@ typedef struct payload_t
     // sem_t client_query; // zapytanie od klienta
     // sem_t server_reply; // odpowiedź od serwera
 } payload;
+
+typedef struct point_t {
+    int x;
+    int y;
+} point;
 
 #endif // COMMON_H

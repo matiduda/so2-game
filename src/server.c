@@ -2,8 +2,9 @@
 #include "../lib/connect.h"
 #include "../lib/server_func.h"
 
-int main(int argc, char **argv) {
+char map[MAX_WORLD_SIZE][MAX_WORLD_SIZE] = { 0 };
 
+int main(int argc, char **argv) {
     // Disable printf bufering
     setvbuf(stdout, NULL, _IONBF, 0);
 
