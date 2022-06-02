@@ -1,7 +1,7 @@
 #ifndef SERVER_H
 #define SERVER_H
 
-#include <string.h>
+#define ROUND_TIME_IN_SECONDS 5
 
 // Function headers specific to the server
 

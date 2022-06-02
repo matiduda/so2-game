@@ -14,17 +14,19 @@
 #include <errno.h>
 #include <ncurses.h>
 
-#define FILENAME_SIZE 20
-#define FILEPACK_SIZE 256
+// Communication parameters
+#define FILENAME_SIZE 20 // for FIFO path
+#define PAYLIAD_SIZE sizeof(payload)
 
-// struct payload_t
-// {
-//     int content_size;
-//     char message[FILENAME_SIZE];
-//     uint8_t file_content[FILEPACK_SIZE];
-//     sem_t cs;           // sekcja krytyczna
-//     sem_t client_query; // zapytanie od klienta
-//     sem_t server_reply; // odpowiedź od serwera
-// };
+// World parameters
+#define WORLD_SIZE 128
+
+typedef struct payload_t
+{
+    int content_size;
+    // sem_t cs;           // sekcja krytyczna
+    // sem_t client_query; // zapytanie od klienta
+    // sem_t server_reply; // odpowiedź od serwera
+} payload;
 
 #endif // COMMON_H

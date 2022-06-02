@@ -2,8 +2,6 @@
 #include "../lib/connect.h"
 #include "../lib/server_func.h"
 
-void checkArguments(int argc, char **argv, int* v, int* f);
-
 int main(int argc, char **argv) {
 
     // Disable printf bufering
@@ -36,6 +34,8 @@ int main(int argc, char **argv) {
     if (fd < 0)
         return perror("Could not open FIFO"), errno;
     
+    // ------------------ GAME LOOP ------------------ 
+
     char rec = 0;
     while(rec != 'q') {
         int r = read(fd, &rec, sizeof(char));
@@ -44,6 +44,12 @@ int main(int argc, char **argv) {
             close(fd);
             return 3;
         }
+
+        // Wait for the client request for moves
+
+        // Calculate round outcome
+
+        // Send the map information to all clients
 
         switch(rec) {
             case 65:
@@ -61,6 +67,8 @@ int main(int argc, char **argv) {
         }
     }
 
-    unlink(path);
+    // Delete FIFO
+    unlink(path); 
+
     return 0;
 }

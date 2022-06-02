@@ -1,5 +1,5 @@
+#include <string.h>
 #include "server_func.h"
-
 void checkArguments(int argc, char **argv, int* v, int* f) {
 
     // Options: -v -> verbose

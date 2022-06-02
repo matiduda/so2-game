@@ -19,6 +19,8 @@ int main(int argc, char *argv) {
 
     printw("Opened FIFO");
 
+    // ------------------ GAME LOOP ------------------
+    
     while (q != 'q') {
         if (kbhit()) {
             q = getch();
