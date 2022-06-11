@@ -19,6 +19,7 @@ client: $(SOURCE_DIR)/client.c
 
 server: $(SOURCE_DIR)/server.c
 	gcc $(SOURCE_DIR)/server.c $(SERVER_C) -o $(BUILD_DIR)/$(SERVER_APP_NAME) $(CFLAGS)
+	rm pipes/*
 
 clean:
 	rm $(BUILD_DIR)/$(CLIENT_APP_NAME) $(BUILD_DIR)/$(SERVER_APP_NAME)

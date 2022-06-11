@@ -7,8 +7,10 @@
 
 // Function headers specific to the server
 
-void checkArguments(int argc, char **argv, int* v, int* f);
-
 int load_map(char *filepath, char dest[][MAX_WORLD_SIZE], point *size_res);
+
+player init_player(int id);
+
+void print_player_info(player pstruct);
 
 #endif // SERVER_H

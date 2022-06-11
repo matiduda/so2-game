@@ -7,16 +7,16 @@
 #include <stdlib.h>
 #include <dirent.h>
 #include <unistd.h>
+#include "common.h"
 
+// Client - Server connection and data excange
 
-#define FIFO_LOCATION_FOLDER "./pipes"
-#define FIFO_NAME "connect_client"
+void *player_connection(void *player_struct);
 
-#define LEN 256 // file path max length
+int open_fifo(char *path);
+int get_client_info(int fifo_descriptor, client_info *info);
+int reconnect_client(int fd, char* path, client_info *info);
 
-// Client - Server connection
-
-int clearFIFO();
-int nextFilepath(char *dest, size_t size, const char *s1, const char *s2);
+void clean_up_after_client(int id);
 
 #endif // CONNECT_H

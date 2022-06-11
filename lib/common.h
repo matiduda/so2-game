@@ -13,25 +13,46 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <ncurses.h>
+#include <pthread.h>
 
-// Communication parameters
-#define FILENAME_SIZE 20 // for FIFO path
-#define PAYLIAD_SIZE sizeof(payload)
+#define FIFO_LOCATION_FOLDER "./pipes"
+
+#define CLIENTS 4
+
+#define FIFO_CLIENT_INP "client_inp"
+#define FIFO_CLIENT_OUT "client_out"
+
+#define MAXLEN 256 // file path max length
 
 // World parameters
 #define MAX_WORLD_SIZE 128
-
-typedef struct payload_t
-{
-    int content_size;
-    // sem_t cs;           // sekcja krytyczna
-    // sem_t client_query; // zapytanie od klienta
-    // sem_t server_reply; // odpowiedź od serwera
-} payload;
 
 typedef struct point_t {
     int x;
     int y;
 } point;
+
+typedef struct player_info {
+    char name[8];
+    point pos;
+    int ID;
+    int PID;
+    int type;
+    int deaths;
+    int coins_carried;
+    int coins_brought;
+} player;
+
+typedef struct payload_client_data
+{
+    char key;
+} client_data;
+
+typedef struct payload_client_info
+{
+    pid_t pid;
+} client_info;
+
+int create_fifo_path(char *dest, int id, char *type);
 
 #endif // COMMON_H

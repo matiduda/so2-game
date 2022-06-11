@@ -3,19 +3,6 @@
 #include <string.h>
 #include "server_func.h"
 
-void checkArguments(int argc, char **argv, int* v, int* f) {
-
-    // Options: -v -> verbose
-    //          -f -> force clear FIFO folder
-
-    for(int i = 1; i < argc; ++i) {
-        if(strcmp(argv[i], "-v"))
-            *v = 1;
-        if(strcmp(argv[i], "-f"))
-            *f = 1;
-    }
-}
-
 int load_map(char *filepath, char dest[][MAX_WORLD_SIZE], point *size_res) {
     // Function loads game map from a text file.
 
@@ -99,7 +86,21 @@ int load_map(char *filepath, char dest[][MAX_WORLD_SIZE], point *size_res) {
     size_res->x = ++size_x;
     size_res->y = size_y;
 
-
-
     return fclose(f), 0;
+}
+
+
+player init_player(int id) {
+
+    player p = { 0 };
+
+    sprintf(p.name, "Player%d", id);
+
+    p.ID = ++id;
+
+    return p;
+}
+
+void print_player_info(player p) {
+    printf("Parameter: %s\nID: %d\nType: %d\nCurr X/Y: %d %d\nDeaths: %d\n\n", p.name, p.ID, p.type, p.pos.x, p.pos.y, p.deaths);
 }
