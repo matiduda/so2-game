@@ -1,19 +1,19 @@
 #include "../lib/common.h"
 #include "../lib/client_func.h"
 
+// TODO: Clean this mess
+
 int main(int argc, char *argv) {
 
-    initscr();
-    // cbreak();
-    // noecho();
-    // nodelay(stdscr, TRUE);
-    // scrollok(stdscr, TRUE);
+    // initscr();
 
     // Open fifo for receiving data
     
     char data_receive_path[MAXLEN];
 
     int CLIENT_ID = -1;
+
+    int response_fd = -1;
 
     for(int i = 1; i < CLIENTS + 1; i++) {
         create_fifo_path(data_receive_path, i, FIFO_CLIENT_OUT);
@@ -25,7 +25,7 @@ int main(int argc, char *argv) {
                 continue;
 
         CLIENT_ID = i;
-        printf("created OUTPUT at `%s`, ID: %d\n", data_receive_path, i);
+        printf("created data_receive_path at `%s`, ID: %d\n", data_receive_path, i);
         break;
     }
 
@@ -42,18 +42,23 @@ int main(int argc, char *argv) {
 
     create_fifo_path(data_send_path, CLIENT_ID, FIFO_CLIENT_INP);
 
-    printw("Opening FIFO on %s\n", data_send_path);
+    printf("Opening FIFO on %s\n", data_send_path);
 
     // Try connecting to a FIFO
 
     fd = open(data_send_path, O_WRONLY);
     if (fd < 0)
-        printw("FIFO error at ``\n", data_send_path);
+        printf("FIFO error at `%s`\n", data_send_path);
+
+    printf("Success on %s\n", data_send_path);
     
     // ------------------ GAME LOOP ------------------
     
     client_info info;
     info.pid = getpid();
+
+
+    printf("Writing client_info...\n");
 
     int w = write(fd, &info, sizeof(info));
     if(w == -1) {
@@ -62,13 +67,27 @@ int main(int argc, char *argv) {
         return 1;
     }
 
+    printf("Success on client_info...\n");
+    
+    response_fd = open(data_receive_path, O_RDONLY);
+    if (response_fd < 0)
+        printf("FIFO error at `%s`\n", data_receive_path);
+
+    printf("Success on response_fd...\n");
+
+
     client_data data;
 
     while (q != 'q') {
-        if (kbhit()) {
-            q = getch();
-            printw("Key pressed! It was: %d\n", q);
+        // if (kbhit()) {
+            printf("Press a key...\n");
+
+
+            q = getchar();
+            printf("Key pressed! It was: %d\n", q);
             // SEND
+
+            getchar(); // newline
 
             data.key = q;
 
@@ -79,10 +98,25 @@ int main(int argc, char *argv) {
                 return 1;
             }
             refresh();
-        }
+
+            // RECEIVE
+
+            printf("Waiting for response...\n");
+
+            server_response response;        
+
+            int r = read(response_fd, &response, sizeof(server_response));
+            if(r == -1) {
+                // FIFO Reading error
+                close(fd);
+                return 2;
+            }
+
+            printf("RESPONSE: %d\n", response.ok);
+        // }
     }
 
-    endwin();
+    // endwin();
 
 
     close(fd);

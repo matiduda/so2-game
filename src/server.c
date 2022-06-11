@@ -15,7 +15,6 @@ int main(int argc, char **argv) {
         players[i] = init_player(i);
 
         pthread_create(&player_thr[i], NULL, player_connection, &players[i]);
-        
     }
 
     for(int i = 0; i < CLIENTS; i++) {

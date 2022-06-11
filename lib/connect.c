@@ -1,5 +1,7 @@
 #include "connect.h"
 
+// TODO: Clean this mess
+
 void *player_connection(void *player_struct) {
     
     player* p = (player *)player_struct;
@@ -20,17 +22,19 @@ void *player_connection(void *player_struct) {
             return printf("[%s]: ", p->name), perror("could not create FIFO"), NULL;
         else
             printf("[%s]: FIFO already exists\n", p->name);
-
-    printf("[%s]: waiting for connection...\n",  p->name);
+    
+    printf("[%s]: Created `%s`...\n",  p->name, path);
 
     fd = open(path, O_RDONLY);
     if (fd < 0)
         return printf("[%s]: ", p->name), perror("Could not open FIFO"), NULL;
 
+
     // Listen for connection packet
     int r;
     client_info info;
 
+    printf("[%s]: listening for connection packet...\n",  p->name);
     r = read(fd, &info, sizeof(info));
     if(r == -1) {
         // FIFO Reading error
@@ -40,10 +44,26 @@ void *player_connection(void *player_struct) {
 
     printf("client pid: %d\n", info.pid);
 
+    // Send first data
+    char sendpath[MAXLEN];
+
+    printf("[%s]: opening writing channel...\n",  p->name);
+
+    if(create_fifo_path(sendpath, p->ID, FIFO_CLIENT_OUT) != 0)
+        return printf("[%s]: incorrect FIFO send path length", p->name), NULL;
+
+    int send_fd = open(sendpath, O_WRONLY);
+    if (send_fd < 0)
+        return printf("[%s]: ", p->name), perror("Could not open send FIFO"), NULL;
+
+    printf("[%s]: opened writing channel...\n",  p->name);
+
     // Listen for data packets
     client_data data;
 
     while(1) {
+
+        printf("[%s]: Listening for packets\n",  p->name);
 
         // Check if the program was not force closed
 
@@ -66,6 +86,8 @@ void *player_connection(void *player_struct) {
             return NULL;
         }
 
+        printf("[%s]: Received packet!\n",  p->name);
+
         if(data.key == 'q' || data.key == 'Q') {
             printf("[%s]: [Q] client requested quit\n",  p->name);
 
@@ -75,6 +97,8 @@ void *player_connection(void *player_struct) {
 
             continue;
         }
+
+        printf("[%s]: Received data: %c\n",  p->name, data.key);
 
         switch(data.key) {
             case 65:
@@ -89,11 +113,28 @@ void *player_connection(void *player_struct) {
             case 68:
                 printf("[%s]: client move - LEFT\n",  p->name);
                 break;
+            default:
+                printf("[%s]: client move - unknown: %c\n",  p->name, data.key);
+                break;
         }
 
         // Calculate round outcome
 
         // Send the map information to all clients
+
+        server_response response;
+
+        if(data.key == 'o')
+            response.ok = 0;
+        else
+            response.ok = 1;
+        
+        int w = write(send_fd, &response, sizeof(server_response));
+        if(w == -1) {
+            // FIFO Write error
+            // Close all communication
+            return NULL;
+        }
     }
 
     // Delete FIFO

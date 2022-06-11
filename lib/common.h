@@ -53,6 +53,12 @@ typedef struct payload_client_info
     pid_t pid;
 } client_info;
 
+typedef struct payload_server_response
+{
+    int ok;
+
+} server_response;
+
 int create_fifo_path(char *dest, int id, char *type);
 
 #endif // COMMON_H
