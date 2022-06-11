@@ -190,3 +190,4 @@ void clean_up_after_client(int id) {
     create_fifo_path(client_out_fifo, id, FIFO_CLIENT_OUT);
     unlink(client_out_fifo);
 }
+
