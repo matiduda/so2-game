@@ -4,6 +4,8 @@
 
 int main(int argc, char **argv) {
 
+    sigaction(SIGPIPE, &(struct sigaction){SIG_IGN}, NULL);
+
     // Disable printf bufering
     setvbuf(stdout, NULL, _IONBF, 0);
 

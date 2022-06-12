@@ -9,3 +9,37 @@ int create_fifo_path(char *dest, int id, char *type) {
 
     return 0;
 }
+
+
+int kbhit(void)
+{
+    int ch = getch();
+
+    if (ch != ERR) {
+        ungetch(ch);
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+void* keyboard_input_func(void *pkey) {
+
+    key_info* info = (key_info *)pkey;
+
+    // Listen for keyboard input
+
+    char key = 0;
+
+    while(info->key != 'q' && info->key != 'Q') {
+        if (kbhit()) {
+            key = getch();
+            // printw("KEY PRESSED!\n");
+            pthread_mutex_lock(&info->mutex);
+            info->key = key;
+            pthread_mutex_unlock(&info->mutex);
+        }
+    }
+
+    return NULL;
+}

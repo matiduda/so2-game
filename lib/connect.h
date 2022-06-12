@@ -9,13 +9,28 @@
 #include <unistd.h>
 #include "common.h"
 
-// Client - Server connection and data excange
+#define CLIENT_DATA_FIFO_PATH "client_data"
+#define SERVER_DATA_FIFO_PATH "server_data"
+
+typedef struct payload_client_request
+{
+    char key;
+    pid_t pid;
+
+} client_data;
+
+typedef struct payload_server_response
+{
+    int ok;
+    pid_t pid;
+} server_data;
+
 
 void *player_connection(void *player_struct);
+int reconnect_client(int* request_fd, int* response_fd, char* request_path, char* response_path);
+int open_fifo(char *path, int read_or_write);
+int make_fifo(char *path);
 
-int open_fifo(char *path);
-int get_client_info(int fifo_descriptor, client_info *info);
-int reconnect_client(int fd, char* path, client_info *info);
 
 void clean_up_after_client(int id);
 

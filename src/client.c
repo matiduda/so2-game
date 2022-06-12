@@ -1,126 +1,133 @@
 #include "../lib/common.h"
+#include "../lib/connect.h"
 #include "../lib/client_func.h"
 
 // TODO: Clean this mess
 
 int main(int argc, char *argv) {
 
-    // initscr();
+    sigaction(SIGPIPE, &(struct sigaction){SIG_IGN}, NULL);
 
-    // Open fifo for receiving data
-    
-    char data_receive_path[MAXLEN];
+    initscr();
+    noecho();
 
+    char response_fifo_path[MAXLEN];
+    char request_fifo_path[MAXLEN];
+
+    pthread_t keyboard_input;
+
+    key_info key_info;
+
+    key_info.key = 0;
+
+    if (pthread_mutex_init(&key_info.mutex, NULL) != 0)
+        return printw("Mutex initialization error\n"), 1;
+
+    pthread_create(&keyboard_input, NULL, keyboard_input_func, &key_info);
+
+    // ---------------------- Server data (client read) ----------------------
+
+    int server_response;
     int CLIENT_ID = -1;
 
-    int response_fd = -1;
-
     for(int i = 1; i < CLIENTS + 1; i++) {
-        create_fifo_path(data_receive_path, i, FIFO_CLIENT_OUT);
+        create_fifo_path(response_fifo_path, i, SERVER_DATA_FIFO_PATH);
 
-        if(mkfifo(data_receive_path, 0777) < 0)
+        if(mkfifo(response_fifo_path, 0777) < 0)
             if(errno != EEXIST)
                 return perror("Could not create FIFO"), 1;
             else
                 continue;
 
         CLIENT_ID = i;
-        printf("created data_receive_path at `%s`, ID: %d\n", data_receive_path, i);
+        printw("created response_fifo_path at `%s`, ID: %d\n", response_fifo_path, i);
         break;
     }
 
     if(CLIENT_ID < 0)
         return perror("There isn't a free player slot inside the server\n"), 2;
 
-    char q = 0;
-
     // Connect to FIFO for sending data to the server
 
-    char data_send_path[MAXLEN];
+    int client_request = -1; // FIFO descriptor
 
-    int fd = -1; // FIFO descriptor
+    create_fifo_path(request_fifo_path, CLIENT_ID, CLIENT_DATA_FIFO_PATH);
 
-    create_fifo_path(data_send_path, CLIENT_ID, FIFO_CLIENT_INP);
+    printw("Opening FIFO on %s\n", request_fifo_path);
 
-    printf("Opening FIFO on %s\n", data_send_path);
+    // ---------------------- Client data (client wirte) ----------------------
 
-    // Try connecting to a FIFO
+    int tries = 1;
+    int sleep_time = 3;
 
-    fd = open(data_send_path, O_WRONLY);
-    if (fd < 0)
-        printf("FIFO error at `%s`\n", data_send_path);
+    while(tries < 5) {
 
-    printf("Success on %s\n", data_send_path);
-    
-    // ------------------ GAME LOOP ------------------
-    
-    client_info info;
-    info.pid = getpid();
-
-
-    printf("Writing client_info...\n");
-
-    int w = write(fd, &info, sizeof(info));
-    if(w == -1) {
-        // FIFO Write error
-        close(fd);
-        return 1;
+        // Try connecting to a FIFO
+        
+        client_request = open(request_fifo_path, O_WRONLY);
+        if (client_request < 0)
+            printw("[CLIENT]: Could not find server, retry %d of 5 in 3s...\n", tries++);
+        else {
+            printw("[CLIENT]: Successfully connected to server!\n");
+            break;
+        }
+        sleep(sleep_time);
     }
 
-    printf("Success on client_info...\n");
-    
-    response_fd = open(data_receive_path, O_RDONLY);
-    if (response_fd < 0)
-        printf("FIFO error at `%s`\n", data_receive_path);
-
-    printf("Success on response_fd...\n");
-
+    server_response = open(response_fifo_path, O_RDONLY);
+    if (server_response < 0)
+        printw("FIFO error at `%s`\n", response_fifo_path);
 
     client_data data;
+    data.pid = getpid();
 
-    while (q != 'q') {
-        // if (kbhit()) {
-            printf("Press a key...\n");
+    while (data.key != 'q' && data.key != 'Q') {
+        
+        data.key = '0';
+        
+        pthread_mutex_lock(&key_info.mutex);
+        data.key = key_info.key;
+        key_info.key = 0;
+        pthread_mutex_unlock(&key_info.mutex);
 
+        printw("LAST PRESSED KEY: %c\n", data.key);
 
-            q = getchar();
-            printf("Key pressed! It was: %d\n", q);
-            // SEND
+        // SEND
 
-            getchar(); // newline
+        int w = write(client_request, &data, sizeof(data));
+        if(w == -1) {
+            // FIFO Write error
+            close(client_request);
+            return 1;
+        }
+        refresh();
 
-            data.key = q;
+        // RECEIVE
 
-            w = write(fd, &data, sizeof(data));
-            if(w == -1) {
-                // FIFO Write error
-                close(fd);
-                return 1;
-            }
-            refresh();
+        printw("Waiting for response...\n");
 
-            // RECEIVE
+        server_data response;        
 
-            printf("Waiting for response...\n");
+        int r = read(server_response, &response, sizeof(server_data));
+        if(r == -1) {
+            // FIFO Reading error
+            close(client_request);
+            return 2;
+        }
 
-            server_response response;        
+        printw("RESPONSE: %d\n", response.ok);
 
-            int r = read(response_fd, &response, sizeof(server_response));
-            if(r == -1) {
-                // FIFO Reading error
-                close(fd);
-                return 2;
-            }
-
-            printf("RESPONSE: %d\n", response.ok);
-        // }
+        refresh();
+        sleep(3);
     }
 
-    // endwin();
+    endwin();
 
 
-    close(fd);
-    unlink(data_receive_path);
+    close(client_request);
+    unlink(response_fifo_path);
+
+    pthread_join(keyboard_input, NULL);
 
     return 0;
 }

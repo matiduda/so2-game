@@ -12,15 +12,13 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>
+#include <signal.h>
 #include <ncurses.h>
 #include <pthread.h>
 
 #define FIFO_LOCATION_FOLDER "./pipes"
 
 #define CLIENTS 4
-
-#define FIFO_CLIENT_INP "client_inp"
-#define FIFO_CLIENT_OUT "client_out"
 
 #define MAXLEN 256 // file path max length
 
@@ -43,22 +41,13 @@ typedef struct player_info {
     int coins_brought;
 } player;
 
-typedef struct payload_client_data
-{
+typedef struct key_thread_info {
     char key;
-} client_data;
-
-typedef struct payload_client_info
-{
-    pid_t pid;
-} client_info;
-
-typedef struct payload_server_response
-{
-    int ok;
-
-} server_response;
+    pthread_mutex_t mutex;
+} key_info;
 
 int create_fifo_path(char *dest, int id, char *type);
+int kbhit(void);
+void* keyboard_input_func(void *pkey);
 
 #endif // COMMON_H
