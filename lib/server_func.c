@@ -96,6 +96,9 @@ player init_player(int id) {
 
     sprintf(p.name, "Player%d", id);
 
+    sem_init(&p.received_data, 0, 0);
+    sem_init(&p.map_calculated, 0, 0);
+
     p.ID = ++id;
 
     return p;

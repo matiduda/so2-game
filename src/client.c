@@ -6,6 +6,7 @@
 
 int main(int argc, char *argv) {
 
+    // Ignore 'pipe closed' signal so program continues
     sigaction(SIGPIPE, &(struct sigaction){SIG_IGN}, NULL);
 
     initscr();

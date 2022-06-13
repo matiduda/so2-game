@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <dirent.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <fcntl.h>
 #include <sys/types.h>
@@ -15,6 +16,7 @@
 #include <signal.h>
 #include <ncurses.h>
 #include <pthread.h>
+#include <semaphore.h>
 
 #define FIFO_LOCATION_FOLDER "./pipes"
 
@@ -29,17 +31,6 @@ typedef struct point_t {
     int x;
     int y;
 } point;
-
-typedef struct player_info {
-    char name[8];
-    point pos;
-    int ID;
-    int PID;
-    int type;
-    int deaths;
-    int coins_carried;
-    int coins_brought;
-} player;
 
 typedef struct key_thread_info {
     char key;

@@ -1,4 +1,4 @@
-CFLAGS = -lpthread -lrt -lncurses
+CFLAGS = -lpthread -lrt -lncurses -g
 SOURCE_DIR = src
 INCLUDE_DIR = lib
 
@@ -15,10 +15,10 @@ SERVER_C = $(addprefix $(INCLUDE_DIR)/, $(SERVER_INCLUDES))
 all: client server
 
 client: $(SOURCE_DIR)/client.c
-	gcc -g $(SOURCE_DIR)/client.c $(CLIENT_C) -o $(BUILD_DIR)/$(CLIENT_APP_NAME) $(CFLAGS)
+	gcc $(SOURCE_DIR)/client.c $(CLIENT_C) -o $(BUILD_DIR)/$(CLIENT_APP_NAME) $(CFLAGS)
 
 server: $(SOURCE_DIR)/server.c
-	gcc -g $(SOURCE_DIR)/server.c $(SERVER_C) -o $(BUILD_DIR)/$(SERVER_APP_NAME) $(CFLAGS)
+	gcc $(SOURCE_DIR)/server.c $(SERVER_C) -o $(BUILD_DIR)/$(SERVER_APP_NAME) $(CFLAGS)
 	rm pipes/*
 
 clean:

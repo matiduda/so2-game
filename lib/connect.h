@@ -8,6 +8,7 @@
 #include <dirent.h>
 #include <unistd.h>
 #include "common.h"
+#include "server_func.h"
 
 #define CLIENT_DATA_FIFO_PATH "client_data"
 #define SERVER_DATA_FIFO_PATH "server_data"

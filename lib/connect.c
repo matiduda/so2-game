@@ -33,6 +33,8 @@ void *player_connection(void *player_struct) {
 
     // ---------------------- Server data (server write) ----------------------
 
+    p->is_connected = 1;
+
     int server_response = open(response_fifo_path, O_WRONLY);
     if (server_response < 0)
         return printf("[%s]: ", p->name), perror("Could not open server FIFO (write)"), NULL;
@@ -70,6 +72,18 @@ void *player_connection(void *player_struct) {
                 printf("[%s]: client move - unknown: %c\n",  p->name, data.key);
                 break;
         }
+
+        printf("[%s]: calculating round outcome\n",  p->name);
+        
+        sem_post(&(p->received_data));
+
+        printf("Posted semaphore\n");
+        printf("Waiting for semaphore\n");
+        
+        sem_wait(&(p->map_calculated));
+
+        printf("[%s]: we have round outcome\n",  p->name);
+
 
         // Check if the program was not force closed
 
