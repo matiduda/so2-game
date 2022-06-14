@@ -10,6 +10,9 @@ int main(int argc, char **argv) {
     // Disable printf bufering
     setvbuf(stdout, NULL, _IONBF, 0);
 
+    if(make_folder_if_not_created(FIFO_LOCATION_FOLDER))
+        return perror("[make_folder_if_not_created()]: Could not create folder\n"), 1; 
+
     char map[MAX_WORLD_SIZE][MAX_WORLD_SIZE] = { 0 };
     player players[4] = { 0 };
     pthread_t player_thr[4];
@@ -44,7 +47,7 @@ int main(int argc, char **argv) {
                 printf("The value of the semaphors is %d\n", value);
 
 
-                sleep(0.01);
+                // sleep(0.01);
                 
                 sw = sem_post(&players[i].map_calculated);
                 if(sw == -1)

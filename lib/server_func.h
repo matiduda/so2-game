@@ -21,6 +21,7 @@ typedef struct player_info {
     int coins_brought;
 } player;
 
+
 int load_map(char *filepath, char dest[][MAX_WORLD_SIZE], point *size_res);
 
 player init_player(int id);

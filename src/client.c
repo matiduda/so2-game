@@ -6,8 +6,13 @@
 
 int main(int argc, char *argv) {
 
+    int wait_tenth_of_second = 20; // Time to wait for user input
+
     // Ignore 'pipe closed' signal so program continues
     sigaction(SIGPIPE, &(struct sigaction){SIG_IGN}, NULL);
+    
+    if(make_folder_if_not_created(FIFO_LOCATION_FOLDER))
+        return perror("[make_folder_if_not_created()]: Could not create folder\n"), 1; 
 
     initscr();
     noecho();
@@ -119,7 +124,7 @@ int main(int argc, char *argv) {
         printw("RESPONSE: %d\n", response.ok);
 
         refresh();
-        sleep(3);
+        usleep(1000 * 100 * wait_tenth_of_second);
     }
 
     endwin();

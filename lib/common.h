@@ -37,7 +37,9 @@ typedef struct key_thread_info {
     pthread_mutex_t mutex;
 } key_info;
 
+int make_folder_if_not_created(char *path);
 int create_fifo_path(char *dest, int id, char *type);
+
 int kbhit(void);
 void* keyboard_input_func(void *pkey);
 
