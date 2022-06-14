@@ -21,6 +21,5 @@ cd build/
 ```
 
 <div style="text-align: center">
-***Made with :purple_heart:***<br>
-*2022 Politechnika Łódzka*
+<b>Made with :purple_heart:</b><br>
 </div>
