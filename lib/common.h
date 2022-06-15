@@ -27,20 +27,40 @@
 // World parameters
 #define MAX_WORLD_SIZE 128
 
-typedef struct point_t {
+#define LOGGING true // Logging to text files
+
+#define CLIENT_LOG_FILE "client.log"
+#define SERVER_LOG_FILE "server.log"
+
+typedef struct point_t
+{
     int x;
     int y;
 } point;
 
-typedef struct key_thread_info {
+typedef struct key_thread_info
+{
     char key;
     pthread_mutex_t mutex;
 } key_info;
+
+typedef struct user_interface
+{
+    WINDOW *game_window;
+    WINDOW *stat_window;
+    WINDOW *legend;
+} ui;
+
+void init_windows(ui *interface, point world_size);
+void update_windows(ui interface, char dest[][MAX_WORLD_SIZE]);
 
 int make_folder_if_not_created(char *path);
 int create_fifo_path(char *dest, int id, char *type);
 
 int kbhit(void);
-void* keyboard_input_func(void *pkey);
+void *keyboard_input_func(void *pkey);
+
+FILE* configure_logging(char *path);
+int log_this(FILE *f, char *msg);
 
 #endif // COMMON_H

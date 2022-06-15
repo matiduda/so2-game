@@ -1,5 +1,76 @@
 #include "common.h"
 
+void init_windows(ui *interface, point world_size) {
+
+    WINDOW *game_window = newwin(world_size.y, world_size.x, 0, 0);
+    WINDOW *stat_window = newwin(15, 25, 0, world_size.x);
+    WINDOW *legend = newwin(5, 54, 0 + 15, world_size.x);
+
+    // scrollok(game_window, false);
+    // scrollok(stat_window, false);
+    // scrollok(legend, false);
+
+    box(game_window, 0, 0);
+    box(stat_window, 0, 0);
+    box(legend, 0, 0);
+
+    interface->game_window = game_window;
+    interface->stat_window = stat_window;
+    interface->legend = legend;
+}
+
+void update_windows(ui interface, char dest[][MAX_WORLD_SIZE]) {
+
+    WINDOW *game_window = interface.game_window;
+    WINDOW *stat_window = interface.stat_window;
+    WINDOW *legend = interface.legend;
+
+    werase(stat_window);
+    werase(legend);
+    werase(game_window);
+
+    int world_height = getmaxy(game_window);
+    int world_width = getmaxx(game_window);
+
+    for(int i = 0; i < world_height; i++) {
+        // attron(COLOR_PAIR(1));
+
+        for(int j = 0; j < world_width; j++) {
+
+            char c = dest[i][j];
+
+            wattron(game_window, COLOR_PAIR(1));
+
+            if(c == ';') {
+                c = ' ';
+                wattron(game_window, COLOR_PAIR(2));
+            }
+
+            mvwprintw(game_window, i + 1, j + 1, "%c", c);
+        }
+
+        mvwprintw(game_window, world_width, i, "\n");
+
+    }
+
+
+    static int frame_counter = 0;
+
+    mvwprintw(stat_window, 1, 1, "frame: %d\n", frame_counter++);
+    mvwprintw(legend, 1, 1, "legend");
+
+    box(game_window, 0, 0);
+    box(stat_window, 0, 0);
+    box(legend, 0, 0);
+
+    wrefresh(stat_window);
+    wrefresh(legend);
+    wrefresh(game_window);
+
+
+}
+
+// -----------------------------------------------------------
 
 int make_folder_if_not_created(char *path) {
     if(!path)
@@ -48,7 +119,6 @@ void* keyboard_input_func(void *pkey) {
     while(info->key != 'q' && info->key != 'Q') {
         if (kbhit()) {
             key = getch();
-            // printw("KEY PRESSED!\n");
             pthread_mutex_lock(&info->mutex);
             info->key = key;
             pthread_mutex_unlock(&info->mutex);
@@ -56,4 +126,23 @@ void* keyboard_input_func(void *pkey) {
     }
 
     return NULL;
+}
+
+// ---------------- Logging ----------------
+
+FILE* configure_logging(char *path) {
+    if(!path)
+        return NULL;
+        
+    return fopen(path, "w");
+}
+
+int log_this(FILE *f, char *msg) {
+    if(!f || !msg)
+        return 1;
+
+    if(fprintf(f, "%s", msg) < 0)
+        return 2;
+
+    return 0;
 }

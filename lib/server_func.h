@@ -5,6 +5,8 @@
 
 #define ROUND_TIME_IN_SECONDS 5
 
+#define MAP_LOCATION "map.txt"
+
 // Data specific to the server
 
 typedef struct player_info {

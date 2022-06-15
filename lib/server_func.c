@@ -4,6 +4,7 @@
 #include "server_func.h"
 
 int load_map(char *filepath, char dest[][MAX_WORLD_SIZE], point *size_res) {
+
     // Function loads game map from a text file.
 
     // The function detects the world size using
@@ -15,9 +16,9 @@ int load_map(char *filepath, char dest[][MAX_WORLD_SIZE], point *size_res) {
     // 0  - map loaded correctly
     // 1 - invalid argument passed
     // 2 - file i/o error
-    // 3 - invalid character detected
+    // > 2 - invalid character detected
 
-    const char valid_symb[] = { ' ', '-', '#', '*', 'A', 'D', 'T', 't', 'c' };
+    const char valid_symb[] = { ' ', ';', '#', '*', 'A', 'D', 'T', 't', 'c' };
     const int valid_s = sizeof(valid_symb);
 
     if(!filepath)
@@ -25,7 +26,7 @@ int load_map(char *filepath, char dest[][MAX_WORLD_SIZE], point *size_res) {
 
     FILE *f = fopen(filepath, "rt");
     if(!f)
-        return 1;
+        return 2;
 
     // Detect world size
     int size_x = MAX_WORLD_SIZE;
@@ -51,7 +52,6 @@ int load_map(char *filepath, char dest[][MAX_WORLD_SIZE], point *size_res) {
             read = fread(&buffer, sizeof(char), 1, f);
             if(read != 1)
                 return fclose(f), 2;
-            printf("symbol:%c\n", buffer);
             // Check if the character is valid
             int ok = 0;
             for(int v = 0; v < valid_s; v++) {
@@ -61,13 +61,13 @@ int load_map(char *filepath, char dest[][MAX_WORLD_SIZE], point *size_res) {
                 }
             }
             if(!ok)
-                return fclose(f), 3;
+                return fclose(f), buffer;
             
             dest[i][j] = buffer;
         }
 
         // Read newline character
-        printf("reading newline...\n");
+
         read = fread(&buffer, sizeof(char), 1, f);
 
         if(feof(f)) {
@@ -77,14 +77,13 @@ int load_map(char *filepath, char dest[][MAX_WORLD_SIZE], point *size_res) {
 
         if(read != 1)
             return fclose(f), 2;
-        printf("read %c...\n", buffer);
         if(buffer != '\n') {
-            return fclose(f), 3;
+            return fclose(f), buffer;
         }
     }
 
-    size_res->x = ++size_x;
-    size_res->y = size_y;
+    size_res->x = size_x + 2;
+    size_res->y = size_y + 3;
 
     return fclose(f), 0;
 }
