@@ -14,7 +14,7 @@
 #define SERVER_DATA_FIFO_PATH "server_data"
 
 typedef struct payload_client_request {
-    char key;
+    int key;
     pid_t pid;
 
 } client_data;

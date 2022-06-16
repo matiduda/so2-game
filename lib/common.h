@@ -30,10 +30,19 @@
 #define CLIENT_FOV 2
 #define CLIENT_MAP_SIZE (2 * CLIENT_FOV + 1)
 
-#define LOGGING false
-
 #define CLIENT_LOG_FILE "client.log"
 #define SERVER_LOG_FILE "server.log"
+
+#define MAP_EMPTY ' '
+#define MAP_WALL '-'
+#define MAP_BUSHES '#'
+#define MAP_BEAST '*'
+#define MAP_CAMPSITE 'A'
+#define MAP_COIN_DROPPED 'D' 
+#define MAP_COIN_50 'T'
+#define MAP_COIN_10 't'
+#define MAP_COIN_1 'c'
+
 
 typedef struct point_t
 {
@@ -43,7 +52,7 @@ typedef struct point_t
 
 typedef struct key_thread_info
 {
-    char key;
+    int key;
     pthread_mutex_t mutex;
 } key_info;
 

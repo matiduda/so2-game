@@ -26,16 +26,14 @@ int main(int argc, char** argv)
         return load;
     }
 
-
-    // initscr();
-    // noecho();
-    // raw();
-    // keypad(stdscr, TRUE);
+    initscr();
+    noecho();
+    raw();
+    keypad(stdscr, TRUE);
     
-    // start_color();
-    // init_pair(1, COLOR_WHITE, COLOR_BLACK);
-    // init_pair(2, COLOR_BLACK, COLOR_WHITE);
-
+    start_color();
+    init_pair(1, COLOR_WHITE, COLOR_BLACK);
+    init_pair(2, COLOR_BLACK, COLOR_WHITE);
 
     ui interface;
     init_windows(&interface, world_size);
@@ -72,6 +70,8 @@ int main(int argc, char** argv)
 
     // ------------------ GAME LOOP ------------------
 
+    printw("Waiting for connection...\n");
+
     while (true) {
 
         int has_connected_clients = 0;
@@ -82,14 +82,18 @@ int main(int argc, char** argv)
                 has_connected_clients++;
 
                 // Wait for data from connected client
-                if (sem_wait(&players[i].received_data) == -1) {
-                    return perror("semaphore error"), -1;
+                while(sem_wait(&players[i].received_data) != 0) {
+                    if(errno != EINTR)
+                        return perror("semaphore error, errno : "), printf("%d\n", errno), 10;
                 }
 
                 update_player(&players[i], map, world_size);
 
-                if (sem_post(&players[i].map_calculated) == -1) {
-                    return perror("semaphore error"), -1;
+                update_windows(interface, map);
+
+                while(sem_post(&players[i].map_calculated) != 0) {
+                    if(errno != EINTR)
+                        return perror("semaphore error, errno : "), printf("%d\n", errno), 10;
                 }
             }
             // break;
@@ -100,28 +104,20 @@ int main(int argc, char** argv)
         key_info.key = 0;
         pthread_mutex_unlock(&key_info.mutex);
 
-        if (closing_key == 't' || closing_key == 'T') {
+        if (closing_key == 'q' || closing_key == 'Q') {
 
             for (int i = 0; i < CLIENTS; i++) {
                 pthread_cancel(player_thr[i]);
             }
 
-            // TODO del
-            endwin();
-            return 0;
-
             break;
         }
-
-        // update_windows(interface, map);
-        // refresh();
     }
 
     for (int i = 0; i < CLIENTS; i++) {
         pthread_join(player_thr[i], NULL);
         sem_destroy(&players[i].received_data);
     }
-
 
     pthread_cancel(keyboard_input);
     endwin();

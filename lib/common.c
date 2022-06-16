@@ -2,9 +2,9 @@
 
 void init_windows(ui *interface, point world_size) {
 
-    WINDOW *game_window = newwin(world_size.y, world_size.x, 0, 0);
-    WINDOW *stat_window = newwin(15, 25, 0, world_size.x);
-    WINDOW *legend = newwin(5, 54, 0 + 15, world_size.x);
+    WINDOW *game_window = newwin(world_size.y + 2, world_size.x + 2, 0, 0);
+    WINDOW *stat_window = newwin(15, 25, 0, world_size.x + 2);
+    WINDOW *legend = newwin(5, 54, 0 + 15, world_size.x + 2);
 
     // scrollok(game_window, false);
     // scrollok(stat_window, false);
@@ -28,16 +28,13 @@ void update_windows(ui interface, char dest[][MAX_WORLD_SIZE]) {
 
 
     werase(stat_window);
-    werase(legend);
     werase(game_window);
-
+    // werase(legend);
 
     int world_height = interface.world_size.y;
     int world_width = interface.world_size.x;
-    wresize(game_window, world_height + 2 ,world_width + 2);
 
     for(int i = 0; i < world_height; i++) {
-        // attron(COLOR_PAIR(1));
 
         for(int j = 0; j < world_width; j++) {
 
@@ -45,33 +42,29 @@ void update_windows(ui interface, char dest[][MAX_WORLD_SIZE]) {
 
             wattron(game_window, COLOR_PAIR(1));
 
-            if(c == '-') {
-                c = ' ';
+            if(c == MAP_WALL) {
+                c = MAP_EMPTY;
                 wattron(game_window, COLOR_PAIR(2));
             }
 
             mvwprintw(game_window, i + 1, j + 1, "%c", c);
         }
-
-        mvwprintw(game_window, world_width, i, "\n");
-
     }
+
+    wattron(game_window, COLOR_PAIR(1));
 
 
     static int frame_counter = 0;
 
     mvwprintw(stat_window, 1, 1, "frame: %d\n", frame_counter++);
-    mvwprintw(legend, 1, 1, "legend");
 
     box(game_window, 0, 0);
     box(stat_window, 0, 0);
-    box(legend, 0, 0);
+    // box(legend, 0, 0);
 
     wrefresh(stat_window);
-    wrefresh(legend);
+    // wrefresh(legend);
     wrefresh(game_window);
-
-
 }
 
 // -----------------------------------------------------------
@@ -113,12 +106,13 @@ int kbhit(void)
 }
 
 void* keyboard_input_func(void *pkey) {
-
+    signal(SIGPIPE, SIG_IGN);
+    
     key_info* info = (key_info *)pkey;
 
     // Listen for keyboard input
 
-    char key = 0;
+    int key = 0;
 
     while(info->key != 'q' && info->key != 'Q') {
         if (kbhit()) {

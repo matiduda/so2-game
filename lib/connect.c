@@ -64,26 +64,6 @@ void* player_connection(void* player_struct)
             return NULL;
         }
 
-        printf("Data received: `%c`\n", data.key);
-
-        switch (data.key) {
-        case 65:
-            // printf("[%s]: client move - UP\n", p->name);
-            break;
-        case 66:
-            // printf("[%s]: client move - DOWN\n", p->name);
-            break;
-        case 67:
-            // printf("[%s]: client move - RIGHT\n", p->name);
-            break;
-        case 68:
-            // printf("[%s]: client move - LEFT\n", p->name);
-            break;
-        default:
-            // printf("[%s]: client move - unknown: %c\n", p->name, data.key);
-            break;
-        }
-
         p->move = data.key;
 
         sem_post(&(p->received_data));

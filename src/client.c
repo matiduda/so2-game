@@ -1,4 +1,3 @@
-#include "../lib/client_func.h"
 #include "../lib/common.h"
 #include "../lib/connect.h"
 
@@ -6,7 +5,9 @@
 
 int main(int argc, char* argv)
 {
-
+    // Ignore 'pipe closed' signal so program continues
+    signal(SIGPIPE, SIG_IGN);
+    
     // Client constants
     int wait_tenth_of_second = 10; // Time to wait for user input
 
@@ -21,14 +22,10 @@ int main(int argc, char* argv)
     init_pair(2, COLOR_BLACK, COLOR_WHITE);
 
     ui interface;
-    point temp_world = { CLIENT_MAP_SIZE + 2, CLIENT_MAP_SIZE + 2 };
-    init_windows(&interface, temp_world);
 
     char map[MAX_WORLD_SIZE][MAX_WORLD_SIZE] = { 0 };
 
-    // Ignore 'pipe closed' signal so program continues
-    sigaction(SIGPIPE, &(struct sigaction) { SIG_IGN }, NULL);
-
+    
     if (make_folder_if_not_created(FIFO_LOCATION_FOLDER)) {
         return 3;
     }
@@ -113,9 +110,9 @@ int main(int argc, char* argv)
 
     // ------------------- GAME LOOP -------------------
 
-    printf("connected!\n");
-
     client_data data;
+    server_data response;
+
     data.pid = getpid();
 
     int frame_counter = 0;
@@ -132,34 +129,35 @@ int main(int argc, char* argv)
 
         int w = write(client_request, &data, sizeof(client_data));
         if (w == -1) {
-            // FIFO Write error
-            close(client_request);
-            return 8;
+            break;
         }
 
         // RECEIVE
 
-        server_data response;
-
         int r = read(server_response, &response, sizeof(server_data));
         if (r == -1) {
+                printf("READ ERROR\n");
+
             // FIFO Reading error
             close(client_request);
             return 9;
         }
 
+        mvwprintw(interface.legend, 1, 1, "world size [x: %d, y: %d]\n", response.world_size.x, response.world_size.y);
+        wrefresh(interface.legend);
+        refresh();
+
+        if(frame_counter == 0)
+            init_windows(&interface, response.world_size);
+
         interface.world_size = response.world_size;
         update_windows(interface, response.map);
-        refresh();
         usleep(1000 * 100 * wait_tenth_of_second);
     }
 
+    pthread_cancel(keyboard_input);
     close(client_request);
     unlink(response_fifo_path);
-
-    pthread_join(keyboard_input, NULL);
-
     endwin();
-
     return 0;
 }
