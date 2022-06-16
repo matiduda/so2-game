@@ -1,5 +1,19 @@
 #include "common.h"
 
+void init_colors() {
+    // init_pair(enum, background, text color);
+
+
+    init_pair(DEFAULT, COLOR_WHITE, COLOR_BLACK);
+    init_pair(WALL, COLOR_BLACK, COLOR_WHITE);
+
+    init_pair(PLAYER, COLOR_WHITE, COLOR_CYAN);
+    init_pair(ENEMY, COLOR_RED, COLOR_BLACK);
+    init_pair(COIN, COLOR_BLACK, COLOR_YELLOW);
+    init_pair(CAMPSITE, COLOR_YELLOW, COLOR_RED);
+    init_pair(BUSHES, COLOR_GREEN, COLOR_BLACK);
+}
+
 void init_windows(ui *interface, point world_size) {
 
     WINDOW *game_window = newwin(world_size.y + 2, world_size.x + 2, 0, 0);
@@ -40,11 +54,39 @@ void update_windows(ui interface, char dest[][MAX_WORLD_SIZE]) {
 
             char c = dest[i][j];
 
-            wattron(game_window, COLOR_PAIR(1));
 
-            if(c == MAP_WALL) {
-                c = MAP_EMPTY;
-                wattron(game_window, COLOR_PAIR(2));
+            switch(c) {
+                case MAP_WALL:
+                    wattron(game_window, COLOR_PAIR(WALL));
+                    c = MAP_EMPTY;
+                    break;
+                case '1' || '2' || '3' || '4':
+                    wattron(game_window, COLOR_PAIR(PLAYER));
+                    break;
+                case MAP_BEAST:
+                    wattron(game_window, COLOR_PAIR(ENEMY));
+                    break;
+                case MAP_CAMPSITE:
+                    wattron(game_window, COLOR_PAIR(CAMPSITE));
+                    break;
+                case MAP_BUSHES:
+                    wattron(game_window, COLOR_PAIR(BUSHES));
+                    break;
+                case MAP_COIN_1:
+                    wattron(game_window, COLOR_PAIR(COIN));
+                    break;
+                case MAP_COIN_10:
+                    wattron(game_window, COLOR_PAIR(COIN));
+                    break;
+                case MAP_COIN_50:
+                    wattron(game_window, COLOR_PAIR(COIN));
+                    break;
+                case MAP_COIN_DROPPED:
+                    wattron(game_window, COLOR_PAIR(COIN));
+                    break;
+                default:
+                    wattron(game_window, COLOR_PAIR(DEFAULT));
+                    break;
             }
 
             mvwprintw(game_window, i + 1, j + 1, "%c", c);

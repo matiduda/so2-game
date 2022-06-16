@@ -1,4 +1,5 @@
 #include "connect.h"
+#include "server_func.h"
 
 void player_connection_cleanup(void* data)
 {
@@ -36,8 +37,6 @@ void* player_connection(void* player_struct)
             // FIFO already exists, no problem
 
     // Waif for client to connect
-
-    printf("[%s]: Waiting for connection\n", p->name);
 
     int client_request = open(request_fifo_path, O_RDONLY);
     if (client_request < 0)
@@ -82,6 +81,8 @@ void* player_connection(void* player_struct)
             if (rec)
                 return NULL;
 
+            randomize_player_spawn(p);
+
             continue;
         }
 
@@ -106,6 +107,9 @@ void* player_connection(void* player_struct)
             int rec = reconnect_client(&client_request, &server_response, request_fifo_path, response_fifo_path);
             if (rec)
                 return NULL;
+
+            randomize_player_spawn(p);
+
 
             continue;
         }
@@ -134,7 +138,6 @@ void create_response(player *player, server_data *response) {
 
 int reconnect_client(int* request_fd, int* response_fd, char* request_path, char* response_path)
 {
-
     if (!request_fd || !response_fd || !request_path || !response_path)
         return -1;
 

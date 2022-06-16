@@ -43,6 +43,8 @@
 #define MAP_COIN_10 't'
 #define MAP_COIN_1 'c'
 
+#define CLIENT_DATA_FIFO_PATH "client_data"
+#define SERVER_DATA_FIFO_PATH "server_data"
 
 typedef struct point_t
 {
@@ -64,6 +66,32 @@ typedef struct user_interface
     WINDOW *legend;
 } ui;
 
+enum colors { DEFAULT = 1, WALL, PLAYER, ENEMY, COIN, CAMPSITE, BUSHES };
+
+// ----------------
+
+typedef struct payload_client_request {
+    int key;
+    pid_t pid;
+
+} client_data;
+
+typedef struct payload_server_response {
+    char map[MAX_WORLD_SIZE][MAX_WORLD_SIZE];
+    point world_size;
+    point player_position;
+    pid_t pid;
+    int ok;
+} server_data;
+
+struct thread_data_t {
+    char *fifo_path;
+    int fifo_fd;
+};
+
+// ------------------
+
+void init_colors();
 void init_windows(ui *interface, point world_size);
 void update_windows(ui interface, char dest[][MAX_WORLD_SIZE]);
 

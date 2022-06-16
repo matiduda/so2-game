@@ -4,6 +4,8 @@
 
 int main(int argc, char** argv)
 {
+    srand(time(NULL));
+
     // Server constants
     int wait_tenth_of_second = 10; // Time to wait for user input
     char map[MAX_WORLD_SIZE][MAX_WORLD_SIZE] = { 0 };
@@ -30,10 +32,10 @@ int main(int argc, char** argv)
     noecho();
     raw();
     keypad(stdscr, TRUE);
+    curs_set(0);
     
     start_color();
-    init_pair(1, COLOR_WHITE, COLOR_BLACK);
-    init_pair(2, COLOR_BLACK, COLOR_WHITE);
+    init_colors();
 
     ui interface;
     init_windows(&interface, world_size);
@@ -74,31 +76,6 @@ int main(int argc, char** argv)
 
     while (true) {
 
-        int has_connected_clients = 0;
-
-        for (int i = 0; i < CLIENTS; i++) {
-
-            if (players[i].is_connected) {
-                has_connected_clients++;
-
-                // Wait for data from connected client
-                while(sem_wait(&players[i].received_data) != 0) {
-                    if(errno != EINTR)
-                        return perror("semaphore error, errno : "), printf("%d\n", errno), 10;
-                }
-
-                update_player(&players[i], map, world_size);
-
-                update_windows(interface, map);
-
-                while(sem_post(&players[i].map_calculated) != 0) {
-                    if(errno != EINTR)
-                        return perror("semaphore error, errno : "), printf("%d\n", errno), 10;
-                }
-            }
-            // break;
-        }
-
         pthread_mutex_lock(&key_info.mutex);
         closing_key = key_info.key;
         key_info.key = 0;
@@ -112,6 +89,31 @@ int main(int argc, char** argv)
 
             break;
         }
+
+        int has_connected_clients = 0;
+
+        for (int i = 0; i < CLIENTS; i++) {
+
+            if (players[i].is_connected) {
+                has_connected_clients++;
+
+                // Wait for data from connected client
+                while(sem_wait(&players[i].received_data) != 0) {
+                    if(errno != EINTR)
+                        return perror("semaphore error, errno : "), printf("%d\n", errno), 10;
+                }
+
+                update_player(&players[i], map);
+
+                update_windows(interface, map);
+
+                while(sem_post(&players[i].map_calculated) != 0) {
+                    if(errno != EINTR)
+                        return perror("semaphore error, errno : "), printf("%d\n", errno), 10;
+                }
+            }
+        }
+        sleep(1);
     }
 
     for (int i = 0; i < CLIENTS; i++) {

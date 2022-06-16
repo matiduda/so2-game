@@ -1,36 +1,14 @@
 #ifndef CONNECT_H
 #define CONNECT_H
 
-#include "common.h"
-#include "server_func.h"
 #include <dirent.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
-#define CLIENT_DATA_FIFO_PATH "client_data"
-#define SERVER_DATA_FIFO_PATH "server_data"
-
-typedef struct payload_client_request {
-    int key;
-    pid_t pid;
-
-} client_data;
-
-typedef struct payload_server_response {
-    char map[MAX_WORLD_SIZE][MAX_WORLD_SIZE];
-    point world_size;
-    point player_position;
-    pid_t pid;
-    int ok;
-} server_data;
-
-struct thread_data_t {
-    char *fifo_path;
-    int fifo_fd;
-};
+#include "common.h"
+#include "server_func.h"
 
 void* player_connection(void* player_struct);
 void player_connection_cleanup(void* data);

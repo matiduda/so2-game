@@ -14,6 +14,7 @@ typedef struct player_info {
     sem_t map_calculated;
     char map[MAX_WORLD_SIZE][MAX_WORLD_SIZE];
     point world_size;
+    point spawn_location;
     point pos;
     int is_connected;
     char name[8];
@@ -31,8 +32,11 @@ int load_map(char *filepath, char dest[][MAX_WORLD_SIZE], point *size_res);
 
 player init_player(int id);
 
+void randomize_player_spawn(player *p);
+
 void print_player_info(player pstruct);
 
-void update_player(player *player, char map[][MAX_WORLD_SIZE], point world_size);
+void update_player(player *player, char map[][MAX_WORLD_SIZE]);
+
 
 #endif // SERVER_H

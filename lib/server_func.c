@@ -1,7 +1,7 @@
-// #include <stdio.h>
 #include "server_func.h"
-#include <stdlib.h>
-#include <string.h>
+
+char MAP_ORIGINAL[MAX_WORLD_SIZE][MAX_WORLD_SIZE] = { 0 };
+point MAP_SIZE = { 0 , 0 };
 
 int load_map(char* filepath, char dest[][MAX_WORLD_SIZE], point* size_res)
 {
@@ -79,6 +79,7 @@ int load_map(char* filepath, char dest[][MAX_WORLD_SIZE], point* size_res)
                 return fclose(f), buffer;
 
             dest[i][j] = buffer;
+			MAP_ORIGINAL[i][j] = buffer;
         }
 
         // Read newline character
@@ -100,12 +101,14 @@ int load_map(char* filepath, char dest[][MAX_WORLD_SIZE], point* size_res)
     size_res->x = size_x;
     size_res->y = size_y + 1;
 
+    MAP_SIZE.x = size_x;
+    MAP_SIZE.y = size_y + 1;
+
     return fclose(f), 0;
 }
 
 player init_player(int id)
 {
-
     player p = { 0 };
 
     sprintf(p.name, "Player%d", id);
@@ -115,16 +118,33 @@ player init_player(int id)
 
     p.ID = ++id;
 
-    p.pos.x = 1;
-    p.pos.y = 1;
-
     p.world_size.y = CLIENT_MAP_SIZE;
     p.world_size.x = CLIENT_MAP_SIZE;
+    
+	randomize_player_spawn(&p);
 
     return p;
 }
 
-void update_player(player* player, char map[][MAX_WORLD_SIZE], point world_size)
+void randomize_player_spawn(player *p) {
+	if(!p)
+		return;
+
+	point spawn;
+
+	while(true) {
+		spawn.x = rand() % (MAP_SIZE.x + 1);
+		spawn.y = rand() % (MAP_SIZE.y + 1);
+
+		if(MAP_ORIGINAL[spawn.x][spawn.y] == MAP_EMPTY)
+			break;
+	}
+
+	p->spawn_location = spawn;
+	p->pos = spawn;
+}
+
+void update_player(player* player, char map[][MAX_WORLD_SIZE])
 {
     /*
     Player map
@@ -138,7 +158,7 @@ void update_player(player* player, char map[][MAX_WORLD_SIZE], point world_size)
     ///////
     */
 
-    if (!player || !map)
+    if (!player)
         return;
 
     switch (player->move) {
@@ -166,7 +186,7 @@ void update_player(player* player, char map[][MAX_WORLD_SIZE], point world_size)
         for (int j = 0; j < PLAYER_MAP_SIZE; j++) {
 
             // Check for out of bounds
-            if (i + y < 0 || i + y > world_size.y || j + x < 0 || j + x > world_size.x)
+            if (i + y < 0 || i + y > MAP_SIZE.y || j + x < 0 || j + x > MAP_SIZE.x)
                 player->map[i][j] = '-';
             else
                 player->map[i][j] = map[i + y][j + x];

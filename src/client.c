@@ -1,7 +1,4 @@
 #include "../lib/common.h"
-#include "../lib/connect.h"
-
-// TODO: Clean this mess
 
 int main(int argc, char* argv)
 {
@@ -15,11 +12,11 @@ int main(int argc, char* argv)
     noecho();
     raw();
     keypad(stdscr, TRUE);
+    curs_set(0);
 
     refresh();
     start_color();
-    init_pair(1, COLOR_WHITE, COLOR_BLACK);
-    init_pair(2, COLOR_BLACK, COLOR_WHITE);
+    init_colors();
 
     ui interface;
 
@@ -33,18 +30,6 @@ int main(int argc, char* argv)
     // Start communication
     char response_fifo_path[MAXLEN];
     char request_fifo_path[MAXLEN];
-
-    pthread_t keyboard_input;
-
-    key_info key_info;
-
-    key_info.key = 0;
-
-    if (pthread_mutex_init(&key_info.mutex, NULL) != 0) {
-        return 4;
-    }
-
-    pthread_create(&keyboard_input, NULL, keyboard_input_func, &key_info);
 
     // ---------------------- Server data (client read) ----------------------
 
@@ -65,6 +50,7 @@ int main(int argc, char* argv)
     }
 
     if (CLIENT_ID < 0) {
+        endwin();
         printf("There isn't a free player slot inside the server\n");
         return 6;
     }
@@ -85,9 +71,11 @@ int main(int argc, char* argv)
 
         client_request = open(request_fifo_path, O_WRONLY);
         if (client_request < 0) {
-            printf(
+            printw(
                 "[__CLIENT__]: Could not find server, retry %d of 5 in 3s...\n",
                 tries++);
+            refresh();
+
         } else {
 
             break;
@@ -96,6 +84,7 @@ int main(int argc, char* argv)
     }
 
     if (tries > 5) {
+        unlink(response_fifo_path);
         endwin();
         printf("[__CLIENT__]: Could not connect to server, aborted after 5 "
                "tries\n");
@@ -109,6 +98,19 @@ int main(int argc, char* argv)
     }
 
     // ------------------- GAME LOOP -------------------
+
+    pthread_t keyboard_input;
+
+    key_info key_info;
+
+    key_info.key = 0;
+
+    if (pthread_mutex_init(&key_info.mutex, NULL) != 0) {
+        return 4;
+    }
+
+    pthread_create(&keyboard_input, NULL, keyboard_input_func, &key_info);
+
 
     client_data data;
     server_data response;
