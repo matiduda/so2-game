@@ -14,6 +14,7 @@ void init_windows(ui *interface, point world_size) {
     box(stat_window, 0, 0);
     box(legend, 0, 0);
 
+    interface->world_size = world_size;
     interface->game_window = game_window;
     interface->stat_window = stat_window;
     interface->legend = legend;
@@ -25,12 +26,15 @@ void update_windows(ui interface, char dest[][MAX_WORLD_SIZE]) {
     WINDOW *stat_window = interface.stat_window;
     WINDOW *legend = interface.legend;
 
+
     werase(stat_window);
     werase(legend);
     werase(game_window);
 
-    int world_height = getmaxy(game_window);
-    int world_width = getmaxx(game_window);
+
+    int world_height = interface.world_size.y;
+    int world_width = interface.world_size.x;
+    wresize(game_window, world_height + 2 ,world_width + 2);
 
     for(int i = 0; i < world_height; i++) {
         // attron(COLOR_PAIR(1));
@@ -41,7 +45,7 @@ void update_windows(ui interface, char dest[][MAX_WORLD_SIZE]) {
 
             wattron(game_window, COLOR_PAIR(1));
 
-            if(c == ';') {
+            if(c == '-') {
                 c = ' ';
                 wattron(game_window, COLOR_PAIR(2));
             }

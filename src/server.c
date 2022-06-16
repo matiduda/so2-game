@@ -4,18 +4,6 @@
 
 int main(int argc, char** argv)
 {
-#if LOGGING
-    char logmsg[1024];
-    FILE* logfile = configure_logging(SERVER_LOG_FILE);
-    if (!logfile) {
-        return printw("[__SERVER__]: Could not open log file\n"), 1;
-    }
-    if (log_this(logfile, "[__SERVER__]: Logging mode enabled\n"))
-        return printw("[__SERVER__]: Logging error\n"), 2;
-
-    int frame_counter = 0;
-#endif
-
     // Server constants
     int wait_tenth_of_second = 10; // Time to wait for user input
     char map[MAX_WORLD_SIZE][MAX_WORLD_SIZE] = { 0 };
@@ -38,21 +26,15 @@ int main(int argc, char** argv)
         return load;
     }
 
-#if LOGGING
-    if (log_this(logfile, "[__SERVER__]: Loaded map from file\n"))
-        return printw("[__SERVER__]: Logging error\n"), 2;
-#endif
 
-    initscr();
-    start_color();
-    noecho();
-    raw();
-    keypad(stdscr, TRUE);
+    // initscr();
+    // noecho();
+    // raw();
+    // keypad(stdscr, TRUE);
     
-    refresh();
-
-    init_pair(1, COLOR_WHITE, COLOR_BLACK);
-    init_pair(2, COLOR_BLACK, COLOR_WHITE);
+    // start_color();
+    // init_pair(1, COLOR_WHITE, COLOR_BLACK);
+    // init_pair(2, COLOR_BLACK, COLOR_WHITE);
 
 
     ui interface;
@@ -83,10 +65,6 @@ int main(int argc, char** argv)
     pthread_create(&keyboard_input, NULL, keyboard_input_func, &key_info);
 
     if (pthread_mutex_init(&key_info.mutex, NULL) != 0) {
-#if LOGGING
-        if (log_this(logfile, "[__SERVER__]: Mutex initialization error\n"))
-            return printw("[__SERVER__]: Logging error\n"), 1;
-#endif
         return 4;
     }
 
@@ -103,35 +81,14 @@ int main(int argc, char** argv)
             if (players[i].is_connected) {
                 has_connected_clients++;
 
-#if LOGGING
-                sprintf(logmsg, "[__SERVER__]: ------------------------- frame %3d -------------------------\n", frame_counter++);
-                if (log_this(logfile, logmsg))
-                    return printw("[__SERVER__]: Logging error\n"), 1;
-                if (log_this(logfile, "[__SERVER__]: Waiting for data...\n"))
-                    return printw("[__SERVER__]: Logging error\n"), 1;
-#endif
-
                 // Wait for data from connected client
                 if (sem_wait(&players[i].received_data) == -1) {
-#if LOGGING
-                    if (log_this(logfile, "[__SERVER__]: Semaphore error\n"))
-                        return printw("[__SERVER__]: Logging error\n"), 1;
-#endif
                     return perror("semaphore error"), -1;
                 }
 
-#if LOGGING
-                sprintf(logmsg, "[__SERVER__]: RECEIVED DATA FROM %d clients!\n",
-                    has_connected_clients);
-                if (log_this(logfile, logmsg))
-                    return printw("[__SERVER__]: Logging error\n"), 1;
-#endif
+                update_player(&players[i], map, world_size);
 
-                if (sem_post(&players[i].received_data) == -1) {
-#if LOGGING
-                    if (log_this(logfile, "[__SERVER__]: Semaphore error\n"))
-                        return printw("[__SERVER__]: Logging error\n"), 1;
-#endif
+                if (sem_post(&players[i].map_calculated) == -1) {
                     return perror("semaphore error"), -1;
                 }
             }
@@ -156,10 +113,8 @@ int main(int argc, char** argv)
             break;
         }
 
-        update_windows(interface, map);
-        refresh();
-
-        sleep(1);
+        // update_windows(interface, map);
+        // refresh();
     }
 
     for (int i = 0; i < CLIENTS; i++) {
@@ -170,11 +125,5 @@ int main(int argc, char** argv)
 
     pthread_cancel(keyboard_input);
     endwin();
-
-#if LOGGING
-
-    fclose(logfile);
-#endif
-
     return 0;
 }

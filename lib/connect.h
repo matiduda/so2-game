@@ -20,8 +20,11 @@ typedef struct payload_client_request {
 } client_data;
 
 typedef struct payload_server_response {
-    int ok;
+    char map[MAX_WORLD_SIZE][MAX_WORLD_SIZE];
+    point world_size;
+    point player_position;
     pid_t pid;
+    int ok;
 } server_data;
 
 struct thread_data_t {
@@ -36,5 +39,7 @@ int open_fifo(char* path, int read_or_write);
 int make_fifo(char* path);
 
 void clean_up_after_client(int id);
+
+void create_response(player *player, server_data *response);
 
 #endif // CONNECT_H

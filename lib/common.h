@@ -27,7 +27,10 @@
 // World parameters
 #define MAX_WORLD_SIZE 128
 
-#define LOGGING true // Logging to text files
+#define CLIENT_FOV 2
+#define CLIENT_MAP_SIZE (2 * CLIENT_FOV + 1)
+
+#define LOGGING false
 
 #define CLIENT_LOG_FILE "client.log"
 #define SERVER_LOG_FILE "server.log"
@@ -46,6 +49,7 @@ typedef struct key_thread_info
 
 typedef struct user_interface
 {
+    point world_size;
     WINDOW *game_window;
     WINDOW *stat_window;
     WINDOW *legend;

@@ -1,6 +1,5 @@
 #include "connect.h"
 
-// TODO: Clean this mess
 void player_connection_cleanup(void* data)
 {
     struct thread_data_t* d = (struct thread_data_t*)data;
@@ -38,6 +37,8 @@ void* player_connection(void* player_struct)
 
     // Waif for client to connect
 
+    printf("[%s]: Waiting for connection\n", p->name);
+
     int client_request = open(request_fifo_path, O_RDONLY);
     if (client_request < 0)
         return printf("[%s]: ", p->name), perror("Could not open client FIFO (read)"), NULL;
@@ -63,6 +64,8 @@ void* player_connection(void* player_struct)
             return NULL;
         }
 
+        printf("Data received: `%c`\n", data.key);
+
         switch (data.key) {
         case 65:
             // printf("[%s]: client move - UP\n", p->name);
@@ -81,11 +84,13 @@ void* player_connection(void* player_struct)
             break;
         }
 
+        p->move = data.key;
 
         sem_post(&(p->received_data));
-        sem_wait(&(p->map_calculated));
 
-        // printf("[%s]: we have round outcome\n", p->name);
+        // Wait for server to calculate map data...
+
+        sem_wait(&(p->map_calculated));
 
         // Check if the program was not force closed
 
@@ -101,6 +106,8 @@ void* player_connection(void* player_struct)
         }
 
         server_data response;
+
+        create_response(p, &response);
 
         if (data.key == 'o')
             response.ok = 0;
@@ -131,6 +138,18 @@ void* player_connection(void* player_struct)
     pthread_cleanup_pop(player_connection_cleanup);
 
     return NULL;
+}
+
+void create_response(player *player, server_data *response) {
+    if(!player || !response)
+        return;
+
+   	for(int i = 0; i < player->world_size.y; i++) {
+		for(int j = 0; j < player->world_size.x; j++) {
+            response->map[i][j] = player->map[i][j];
+		}
+	}
+    response->world_size = player->world_size;
 }
 
 int reconnect_client(int* request_fd, int* response_fd, char* request_path, char* response_path)

@@ -12,15 +12,18 @@
 typedef struct player_info {
     sem_t received_data;
     sem_t map_calculated;
+    char map[MAX_WORLD_SIZE][MAX_WORLD_SIZE];
+    point world_size;
+    point pos;
     int is_connected;
     char name[8];
-    point pos;
     int ID;
     int PID;
     int type;
     int deaths;
     int coins_carried;
     int coins_brought;
+    int move;
 } player;
 
 
@@ -29,5 +32,7 @@ int load_map(char *filepath, char dest[][MAX_WORLD_SIZE], point *size_res);
 player init_player(int id);
 
 void print_player_info(player pstruct);
+
+void update_player(player *player, char map[][MAX_WORLD_SIZE], point world_size);
 
 #endif // SERVER_H
