@@ -134,6 +134,13 @@ void create_response(player *player, server_data *response) {
 		}
 	}
     response->world_size = player->world_size;
+    response->player_position = player->pos;
+    response->number = player->ID;
+    response->round_number = player->round_number;
+    response->type = player->type;
+    response->deaths = player->deaths;
+    response->coins_carried = player->coins_carried;
+    response->coins_brought = player->coins_brought;
 }
 
 int reconnect_client(int* request_fd, int* response_fd, char* request_path, char* response_path)

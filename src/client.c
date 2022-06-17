@@ -1,4 +1,5 @@
 #include "../lib/common.h"
+#include "../lib/client_func.h"
 
 int main(int argc, char* argv)
 {
@@ -111,13 +112,14 @@ int main(int argc, char* argv)
 
     pthread_create(&keyboard_input, NULL, keyboard_input_func, &key_info);
 
-
     client_data data;
     server_data response;
 
     data.pid = getpid();
 
     int frame_counter = 0;
+
+    info_client client_info;
 
     while (data.key != 'q' && data.key != 'Q') {
         data.key = ' ';
@@ -145,15 +147,17 @@ int main(int argc, char* argv)
             return 9;
         }
 
-        mvwprintw(interface.legend, 1, 1, "world size [x: %d, y: %d]\n", response.world_size.x, response.world_size.y);
-        wrefresh(interface.legend);
-        refresh();
-
         if(frame_counter == 0)
-            init_windows(&interface, response.world_size);
+            init_windows(&interface, response.world_size, 12, 50);
 
         interface.world_size = response.world_size;
-        update_windows(interface, response.map);
+
+        client_info.response = &response;
+
+        print_info_client(interface.stat_window, &client_info);
+        print_legend(interface.legend, 0, 1);
+        update_windows_client(interface, response.map, response.player_position);
+
         usleep(1000 * 100 * wait_tenth_of_second);
     }
 

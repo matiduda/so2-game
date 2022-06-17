@@ -68,12 +68,12 @@ typedef struct user_interface
 
 enum colors { DEFAULT = 1, WALL, PLAYER, ENEMY, COIN, CAMPSITE, BUSHES };
 
+
 // ----------------
 
 typedef struct payload_client_request {
     int key;
     pid_t pid;
-
 } client_data;
 
 typedef struct payload_server_response {
@@ -82,6 +82,12 @@ typedef struct payload_server_response {
     point player_position;
     pid_t pid;
     int ok;
+    int number;
+    int round_number;
+    int type;
+    int deaths;
+    int coins_carried;
+    int coins_brought;
 } server_data;
 
 struct thread_data_t {
@@ -92,16 +98,13 @@ struct thread_data_t {
 // ------------------
 
 void init_colors();
-void init_windows(ui *interface, point world_size);
-void update_windows(ui interface, char dest[][MAX_WORLD_SIZE]);
+void init_windows(ui *interface, point world_size, int stat_height, int stat_width);
+void print_legend(WINDOW *w, int Y, int X);
 
 int make_folder_if_not_created(char *path);
 int create_fifo_path(char *dest, int id, char *type);
 
 int kbhit(void);
 void *keyboard_input_func(void *pkey);
-
-FILE* configure_logging(char *path);
-int log_this(FILE *f, char *msg);
 
 #endif // COMMON_H

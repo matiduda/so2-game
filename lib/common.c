@@ -1,9 +1,6 @@
 #include "common.h"
 
 void init_colors() {
-    // init_pair(enum, background, text color);
-
-
     init_pair(DEFAULT, COLOR_WHITE, COLOR_BLACK);
     init_pair(WALL, COLOR_BLACK, COLOR_WHITE);
 
@@ -14,19 +11,13 @@ void init_colors() {
     init_pair(BUSHES, COLOR_GREEN, COLOR_BLACK);
 }
 
-void init_windows(ui *interface, point world_size) {
+void init_windows(ui *interface, point world_size, int stat_height, int stat_width) {
 
     WINDOW *game_window = newwin(world_size.y + 2, world_size.x + 2, 0, 0);
-    WINDOW *stat_window = newwin(15, 25, 0, world_size.x + 2);
-    WINDOW *legend = newwin(5, 54, 0 + 15, world_size.x + 2);
-
-    // scrollok(game_window, false);
-    // scrollok(stat_window, false);
-    // scrollok(legend, false);
+    WINDOW *stat_window = newwin(stat_height, stat_width, 0, world_size.x + 2);
+    WINDOW *legend = newwin(12, 34, stat_height, world_size.x + 2);
 
     box(game_window, 0, 0);
-    box(stat_window, 0, 0);
-    box(legend, 0, 0);
 
     interface->world_size = world_size;
     interface->game_window = game_window;
@@ -34,79 +25,44 @@ void init_windows(ui *interface, point world_size) {
     interface->legend = legend;
 }
 
-void update_windows(ui interface, char dest[][MAX_WORLD_SIZE]) {
-
-    WINDOW *game_window = interface.game_window;
-    WINDOW *stat_window = interface.stat_window;
-    WINDOW *legend = interface.legend;
-
-
-    werase(stat_window);
-    werase(game_window);
-    // werase(legend);
-
-    int world_height = interface.world_size.y;
-    int world_width = interface.world_size.x;
-
-    for(int i = 0; i < world_height; i++) {
-
-        for(int j = 0; j < world_width; j++) {
-
-            char c = dest[i][j];
-
-
-            switch(c) {
-                case MAP_WALL:
-                    wattron(game_window, COLOR_PAIR(WALL));
-                    c = MAP_EMPTY;
-                    break;
-                case '1' || '2' || '3' || '4':
-                    wattron(game_window, COLOR_PAIR(PLAYER));
-                    break;
-                case MAP_BEAST:
-                    wattron(game_window, COLOR_PAIR(ENEMY));
-                    break;
-                case MAP_CAMPSITE:
-                    wattron(game_window, COLOR_PAIR(CAMPSITE));
-                    break;
-                case MAP_BUSHES:
-                    wattron(game_window, COLOR_PAIR(BUSHES));
-                    break;
-                case MAP_COIN_1:
-                    wattron(game_window, COLOR_PAIR(COIN));
-                    break;
-                case MAP_COIN_10:
-                    wattron(game_window, COLOR_PAIR(COIN));
-                    break;
-                case MAP_COIN_50:
-                    wattron(game_window, COLOR_PAIR(COIN));
-                    break;
-                case MAP_COIN_DROPPED:
-                    wattron(game_window, COLOR_PAIR(COIN));
-                    break;
-                default:
-                    wattron(game_window, COLOR_PAIR(DEFAULT));
-                    break;
-            }
-
-            mvwprintw(game_window, i + 1, j + 1, "%c", c);
-        }
-    }
-
-    wattron(game_window, COLOR_PAIR(1));
-
-
-    static int frame_counter = 0;
-
-    mvwprintw(stat_window, 1, 1, "frame: %d\n", frame_counter++);
-
-    box(game_window, 0, 0);
-    box(stat_window, 0, 0);
-    // box(legend, 0, 0);
-
-    wrefresh(stat_window);
-    // wrefresh(legend);
-    wrefresh(game_window);
+void print_legend(WINDOW *w, int Y, int X) {
+    mvwprintw(w, Y + 0, X + 0, "Legend:");
+    wattron(w, COLOR_PAIR(PLAYER));
+    mvwprintw(w, Y + 1, X + 0, "1234");
+    wattron(w, COLOR_PAIR(DEFAULT));
+    mvwprintw(w, Y + 1, X + 5, "- players");
+    wattron(w, COLOR_PAIR(WALL));
+    mvwprintw(w, Y + 2, X + 0, " ", MAP_WALL);
+    wattron(w, COLOR_PAIR(DEFAULT));
+    mvwprintw(w, Y + 2, X + 5, "- wall");
+    wattron(w, COLOR_PAIR(BUSHES));
+    mvwprintw(w, Y + 3, X + 0, "%c", MAP_BUSHES);
+    wattron(w, COLOR_PAIR(DEFAULT));
+    mvwprintw(w, Y + 3, X + 5, "- bushes (slow down)");
+    wattron(w, COLOR_PAIR(ENEMY));
+    mvwprintw(w, Y + 4, X + 0, "%c", MAP_BEAST);
+    wattron(w, COLOR_PAIR(DEFAULT));
+    mvwprintw(w, Y + 4, X + 5, "- wild beast");
+    wattron(w, COLOR_PAIR(COIN));
+    mvwprintw(w, Y + 5, X + 0, "%c", MAP_COIN_1);
+    wattron(w, COLOR_PAIR(DEFAULT));
+    mvwprintw(w, Y + 5, X + 5, "- one coin");
+    wattron(w, COLOR_PAIR(COIN));
+    mvwprintw(w, Y + 6, X + 0, "%c", MAP_COIN_10);
+    wattron(w, COLOR_PAIR(DEFAULT));
+    mvwprintw(w, Y + 6, X + 5, "- treasure (10 coins)");
+    wattron(w, COLOR_PAIR(COIN));
+    mvwprintw(w, Y + 7, X + 0, "%c", MAP_COIN_50);
+    wattron(w, COLOR_PAIR(DEFAULT));
+    mvwprintw(w, Y + 7, X + 5, "- large treasure (50 coins)");
+    wattron(w, COLOR_PAIR(COIN));
+    mvwprintw(w, Y + 8, X + 0, "%c", MAP_COIN_DROPPED);
+    wattron(w, COLOR_PAIR(DEFAULT));
+    mvwprintw(w, Y + 8, X + 5, "- dropped treasure");
+    wattron(w, COLOR_PAIR(CAMPSITE));
+    mvwprintw(w, Y + 9, X + 0, "%c", MAP_CAMPSITE);
+    wattron(w, COLOR_PAIR(DEFAULT));
+    mvwprintw(w, Y + 9, X + 5, "- campsite");
 }
 
 // -----------------------------------------------------------
@@ -166,23 +122,4 @@ void* keyboard_input_func(void *pkey) {
     }
 
     return NULL;
-}
-
-// ---------------- Logging ----------------
-
-FILE* configure_logging(char *path) {
-    if(!path)
-        return NULL;
-        
-    return fopen(path, "w");
-}
-
-int log_this(FILE *f, char *msg) {
-    if(!f || !msg)
-        return 1;
-
-    if(fprintf(f, "%s", msg) < 0)
-        return 2;
-
-    return 0;
 }

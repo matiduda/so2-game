@@ -7,9 +7,8 @@ int main(int argc, char** argv)
     srand(time(NULL));
 
     // Server constants
-    int wait_tenth_of_second = 10; // Time to wait for user input
     char map[MAX_WORLD_SIZE][MAX_WORLD_SIZE] = { 0 };
-
+    
     point world_size;
     int load = load_map(MAP_LOCATION, map, &world_size);
 
@@ -28,6 +27,7 @@ int main(int argc, char** argv)
         return load;
     }
 
+    // Initialize GUI
     initscr();
     noecho();
     raw();
@@ -38,7 +38,7 @@ int main(int argc, char** argv)
     init_colors();
 
     ui interface;
-    init_windows(&interface, world_size);
+    init_windows(&interface, world_size, 16, 50);
 
     // Ignore 'pipe closed' signal so program continues
     sigaction(SIGPIPE, &(struct sigaction) { SIG_IGN }, NULL);
@@ -69,6 +69,12 @@ int main(int argc, char** argv)
     }
 
     char closing_key = 0;
+
+    info_server server_info;
+    server_info.server_PID = getpid();
+    server_info.player_count = 4;
+    server_info.players = players;
+    server_info.round_number = 0;
 
     // ------------------ GAME LOOP ------------------
 
@@ -105,7 +111,12 @@ int main(int argc, char** argv)
 
                 update_player(&players[i], map);
 
-                update_windows(interface, map);
+                print_info_server(interface.stat_window, &server_info);
+
+                print_legend(interface.legend, 1, 1);
+                update_windows_server(interface, map);
+
+                server_info.round_number++;
 
                 while(sem_post(&players[i].map_calculated) != 0) {
                     if(errno != EINTR)
@@ -113,6 +124,7 @@ int main(int argc, char** argv)
                 }
             }
         }
+
         sleep(1);
     }
 

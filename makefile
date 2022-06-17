@@ -6,7 +6,7 @@ BUILD_DIR = .
 CLIENT_APP_NAME = client
 SERVER_APP_NAME = server
 
-CLIENT_INCLUDES = common.c
+CLIENT_INCLUDES = common.c client_func.c
 SERVER_INCLUDES = common.c connect.c server_func.c
 
 CLIENT_C = $(addprefix $(INCLUDE_DIR)/, $(CLIENT_INCLUDES))

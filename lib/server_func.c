@@ -1,11 +1,123 @@
 #include "server_func.h"
 
 char MAP_ORIGINAL[MAX_WORLD_SIZE][MAX_WORLD_SIZE] = { 0 };
-point MAP_SIZE = { 0 , 0 };
+point MAP_SIZE = { 0, 0 };
+
+void update_windows_server(ui interface, char dest[][MAX_WORLD_SIZE])
+{
+
+    WINDOW* game_window = interface.game_window;
+    WINDOW* stat_window = interface.stat_window;
+    WINDOW* legend = interface.legend;
+
+    int world_height = interface.world_size.y;
+    int world_width = interface.world_size.x;
+
+    for (int i = 0; i < world_height; i++) {
+
+        for (int j = 0; j < world_width; j++) {
+
+            char c = dest[i][j];
+
+            switch (c) {
+            case MAP_WALL:
+                wattron(game_window, COLOR_PAIR(WALL));
+                c = MAP_EMPTY;
+                break;
+            case '1' || '2' || '3' || '4':
+                wattron(game_window, COLOR_PAIR(PLAYER));
+                break;
+            case MAP_BEAST:
+                wattron(game_window, COLOR_PAIR(ENEMY));
+                break;
+            case MAP_CAMPSITE:
+                wattron(game_window, COLOR_PAIR(CAMPSITE));
+                break;
+            case MAP_BUSHES:
+                wattron(game_window, COLOR_PAIR(BUSHES));
+                break;
+            case MAP_COIN_1:
+                wattron(game_window, COLOR_PAIR(COIN));
+                break;
+            case MAP_COIN_10:
+                wattron(game_window, COLOR_PAIR(COIN));
+                break;
+            case MAP_COIN_50:
+                wattron(game_window, COLOR_PAIR(COIN));
+                break;
+            case MAP_COIN_DROPPED:
+                wattron(game_window, COLOR_PAIR(COIN));
+                break;
+            default:
+                wattron(game_window, COLOR_PAIR(DEFAULT));
+                break;
+            }
+
+            mvwprintw(game_window, i + 1, j + 1, "%c", c);
+        }
+    }
+
+    wattron(game_window, COLOR_PAIR(DEFAULT));
+
+    box(game_window, 0, 0);
+
+    wrefresh(stat_window);
+    wrefresh(legend);
+    wrefresh(game_window);
+}
+
+void print_info_server(WINDOW* w, info_server* info)
+{
+    if (!w || !info)
+        return;
+
+    const int Y = 1;
+    const int X = 1;
+
+    mvwprintw(w, Y + 0, X + 0, "Server's PID: %d", info->server_PID);
+    mvwprintw(w, Y + 2, X + 0, "Campsite X/Y: %02d/%02d", info->campsite_xy.x, info->campsite_xy.y);
+    mvwprintw(w, Y + 3, X + 0, "Round number: %d", info->round_number);
+    mvwprintw(w, Y + 5, X + 0, "Parameter:");
+    mvwprintw(w, Y + 6, X + 0, "PID");
+    mvwprintw(w, Y + 7, X + 0, "Type");
+    mvwprintw(w, Y + 8, X + 0, "Curr X/Y");
+    mvwprintw(w, Y + 9, X + 0, "Deaths");
+    mvwprintw(w, Y + 11, X + 0, "Coins");
+    mvwprintw(w, Y + 12, X + 0, "carried");
+    mvwprintw(w, Y + 13, X + 0, "brought");
+
+    for (int i = 0; i < info->player_count; i++) {
+        int xoff = 13 + i * 9;
+
+        if (info->players[i].is_connected) {
+            mvwprintw(w, Y + 5, X + xoff, "%s", info->players[i].name);
+            mvwprintw(w, Y + 6, X + xoff, "%s", info->players[i].PID);
+            if (info->players[i].type == 0)
+                mvwprintw(w, Y + 7, X + xoff, "HUMAN");
+            else if (info->players[i].type == 1)
+                mvwprintw(w, Y + 7, X + xoff, "CPU");
+            mvwprintw(w, Y + 8, X + xoff, "%02d/%02d", info->players[i].pos.x, info->players[i].pos.y);
+            mvwprintw(w, Y + 9, X + xoff, "%d", info->players[i].deaths);
+
+            mvwprintw(w, Y + 12, X + xoff, "%d", info->players[i].coins_carried);
+            mvwprintw(w, Y + 13, X + xoff, "%d", info->players[i].coins_brought);
+        } else {
+            mvwprintw(w, Y + 5, X + xoff, "%s", info->players[i].name);
+            mvwprintw(w, Y + 6, X + xoff, "-");
+            mvwprintw(w, Y + 7, X + xoff, "-");
+            mvwprintw(w, Y + 8, X + xoff, "--/--");
+            mvwprintw(w, Y + 9, X + xoff, "-");
+
+            mvwprintw(w, Y + 12, X + xoff, "-");
+            mvwprintw(w, Y + 13, X + xoff, "-");
+        }
+    }
+}
+
+// ------------------------------------------------------
 
 int load_map(char* filepath, char dest[][MAX_WORLD_SIZE], point* size_res)
 {
-
     // Function loads game map from a text file.
 
     // The function detects the world size using
@@ -79,7 +191,7 @@ int load_map(char* filepath, char dest[][MAX_WORLD_SIZE], point* size_res)
                 return fclose(f), buffer;
 
             dest[i][j] = buffer;
-			MAP_ORIGINAL[i][j] = buffer;
+            MAP_ORIGINAL[i][j] = buffer;
         }
 
         // Read newline character
@@ -118,30 +230,31 @@ player init_player(int id)
 
     p.ID = ++id;
 
-    p.world_size.y = CLIENT_MAP_SIZE;
-    p.world_size.x = CLIENT_MAP_SIZE;
-    
-	randomize_player_spawn(&p);
+    p.world_size.y = MAP_SIZE.y;
+    p.world_size.x = MAP_SIZE.x;
+
+    randomize_player_spawn(&p);
 
     return p;
 }
 
-void randomize_player_spawn(player *p) {
-	if(!p)
-		return;
+void randomize_player_spawn(player* p)
+{
+    if (!p)
+        return;
 
-	point spawn;
+    point spawn;
 
-	while(true) {
-		spawn.x = rand() % (MAP_SIZE.x + 1);
-		spawn.y = rand() % (MAP_SIZE.y + 1);
+    while (true) {
+        spawn.x = rand() % (MAP_SIZE.x + 1);
+        spawn.y = rand() % (MAP_SIZE.y + 1);
 
-		if(MAP_ORIGINAL[spawn.x][spawn.y] == MAP_EMPTY)
-			break;
-	}
+        if (MAP_ORIGINAL[spawn.x][spawn.y] == MAP_EMPTY)
+            break;
+    }
 
-	p->spawn_location = spawn;
-	p->pos = spawn;
+    p->spawn_location = spawn;
+    p->pos = spawn;
 }
 
 void update_player(player* player, char map[][MAX_WORLD_SIZE])
@@ -193,3 +306,5 @@ void update_player(player* player, char map[][MAX_WORLD_SIZE])
         }
     }
 }
+
+// ---
