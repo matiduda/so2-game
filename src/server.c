@@ -110,6 +110,7 @@ int main(int argc, char** argv)
                 }
 
                 update_player(&players[i], map);
+                copy_raw_map_data(map);
 
                 print_info_server(interface.stat_window, &server_info);
 

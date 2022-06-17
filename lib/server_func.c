@@ -16,41 +16,41 @@ void update_windows_server(ui interface, char dest[][MAX_WORLD_SIZE])
     for (int i = 0; i < world_height; i++) {
 
         for (int j = 0; j < world_width; j++) {
-
             char c = dest[i][j];
 
-            switch (c) {
-            case MAP_WALL:
-                wattron(game_window, COLOR_PAIR(WALL));
-                c = MAP_EMPTY;
-                break;
-            case '1' || '2' || '3' || '4':
+            if(c == '1' || c == '2' || c == '3' || c == '4') {
                 wattron(game_window, COLOR_PAIR(PLAYER));
-                break;
-            case MAP_BEAST:
-                wattron(game_window, COLOR_PAIR(ENEMY));
-                break;
-            case MAP_CAMPSITE:
-                wattron(game_window, COLOR_PAIR(CAMPSITE));
-                break;
-            case MAP_BUSHES:
-                wattron(game_window, COLOR_PAIR(BUSHES));
-                break;
-            case MAP_COIN_1:
-                wattron(game_window, COLOR_PAIR(COIN));
-                break;
-            case MAP_COIN_10:
-                wattron(game_window, COLOR_PAIR(COIN));
-                break;
-            case MAP_COIN_50:
-                wattron(game_window, COLOR_PAIR(COIN));
-                break;
-            case MAP_COIN_DROPPED:
-                wattron(game_window, COLOR_PAIR(COIN));
-                break;
-            default:
-                wattron(game_window, COLOR_PAIR(DEFAULT));
-                break;
+            } else {
+                switch(c) {
+                    case MAP_WALL:
+                        wattron(game_window, COLOR_PAIR(WALL));
+                        c = MAP_EMPTY;
+                        break;
+                    case MAP_BEAST:
+                        wattron(game_window, COLOR_PAIR(ENEMY));
+                        break;
+                    case MAP_CAMPSITE:
+                        wattron(game_window, COLOR_PAIR(CAMPSITE));
+                        break;
+                    case MAP_BUSHES:
+                        wattron(game_window, COLOR_PAIR(BUSHES));
+                        break;
+                    case MAP_COIN_1:
+                        wattron(game_window, COLOR_PAIR(COIN));
+                        break;
+                    case MAP_COIN_10:
+                        wattron(game_window, COLOR_PAIR(COIN));
+                        break;
+                    case MAP_COIN_50:
+                        wattron(game_window, COLOR_PAIR(COIN));
+                        break;
+                    case MAP_COIN_DROPPED:
+                        wattron(game_window, COLOR_PAIR(COIN));
+                        break;
+                    default:
+                        wattron(game_window, COLOR_PAIR(DEFAULT));
+                        break;
+                }
             }
 
             mvwprintw(game_window, i + 1, j + 1, "%c", c);
@@ -99,7 +99,7 @@ void print_info_server(WINDOW* w, info_server* info)
             mvwprintw(w, Y + 8, X + xoff, "%02d/%02d", info->players[i].pos.x, info->players[i].pos.y);
             mvwprintw(w, Y + 9, X + xoff, "%d", info->players[i].deaths);
 
-            mvwprintw(w, Y + 12, X + xoff, "%d", info->players[i].coins_carried);
+            mvwprintw(w, Y + 12, X + xoff, "%d", info->players[i].coins_found);
             mvwprintw(w, Y + 13, X + xoff, "%d", info->players[i].coins_brought);
         } else {
             mvwprintw(w, Y + 5, X + xoff, "%s", info->players[i].name);
@@ -274,22 +274,78 @@ void update_player(player* player, char map[][MAX_WORLD_SIZE])
     if (!player)
         return;
 
+    point d_pos = { 0, 0 };
+
     switch (player->move) {
-    case 259: // UP:
-        player->pos.y--;
-        break;
-    case 258: // DOWN
-        player->pos.y++;
-        break;
-    case 260: // LEFT
-        player->pos.x--;
-        break;
-    case 261: // RIGHT
-        player->pos.x++;
-        break;
-    default:
-        break;
+        case 259:   // UP:
+            d_pos.y--;
+            break;
+        case 258: // DOWN
+            d_pos.y++;
+            break;
+        case 260: // LEFT
+            d_pos.x--;
+            break;
+        case 261: // RIGHT
+            d_pos.x++;
+            break; 
     }
+
+    enum player_action action = get_action(map[player->pos.y + d_pos.y][player->pos.x + d_pos.x]);
+
+    switch (action) {
+        case IN_WALL: {
+            d_pos.x = 0;
+            d_pos.y = 0;
+            break;
+        } case IN_BUSHES: {
+            if(player->bush_timer == 0) {
+                player->bush_timer = 1;
+                d_pos.x = 0;
+                d_pos.y = 0;
+                break;
+            }
+            player->bush_timer = 0;
+            break;
+        } case GETS_TREASURE: {
+            switch(map[player->pos.y + d_pos.y][player->pos.x + d_pos.x]) {
+                case MAP_COIN_1:
+                    player->coins_found += 1;
+                    break;
+                case MAP_COIN_10:
+                    player->coins_found += 10;
+                    break;
+                case MAP_COIN_50:
+                    player->coins_found += 50;
+                    break;
+                case MAP_COIN_DROPPED:
+                    // TODO: Lookup for custom treasure
+                    player->coins_found = 99;
+                    break;
+            }
+            map[player->pos.y + d_pos.y][player->pos.x + d_pos.x] = MAP_EMPTY;
+            MAP_ORIGINAL[player->pos.y + d_pos.y][player->pos.x + d_pos.x] = MAP_EMPTY;
+            break;
+        } case IS_DEAD: {
+            player->deaths++;
+            d_pos.x = 0;
+            d_pos.y = 0;
+
+            player->pos.x = player->spawn_location.x;
+            player->pos.y = player->spawn_location.y;
+            break;
+        } case IN_CAMPSITE: {
+            player->coins_brought += player->coins_found;
+            player->coins_found = 0;
+            break;
+        }
+    }
+
+    player->pos.x += d_pos.x;
+    player->pos.y += d_pos.y;
+
+    // Draw player on map
+    map[player->pos.y][player->pos.x] = player->ID + '0';
 
     const int PLAYER_MAP_SIZE = CLIENT_MAP_SIZE;
     int x = player->pos.x - CLIENT_FOV;
@@ -305,6 +361,35 @@ void update_player(player* player, char map[][MAX_WORLD_SIZE])
                 player->map[i][j] = map[i + y][j + x];
         }
     }
+
+}
+
+void copy_raw_map_data(char map[][MAX_WORLD_SIZE]) {
+    for(int i = 0; i < MAP_SIZE.y; i++)
+        for(int j = 0; j < MAP_SIZE.x; j++)
+            map[i][j] = MAP_ORIGINAL[i][j];
+}
+
+enum player_action get_action(char new_location) {
+    if(new_location == MAP_EMPTY)
+        return NONE;
+
+    if(new_location == MAP_WALL)
+        return IN_WALL;
+
+    if(new_location == MAP_COIN_1 || new_location == MAP_COIN_10 || new_location == MAP_COIN_50 || new_location == MAP_COIN_DROPPED )
+        return GETS_TREASURE;
+
+    if(new_location == MAP_BEAST || new_location == '1'|| new_location == '2'|| new_location == '3'|| new_location == '4')
+        return IS_DEAD;
+
+    if(new_location == MAP_BUSHES)
+        return IN_BUSHES;
+
+    if(new_location == MAP_CAMPSITE)
+        return IN_CAMPSITE;
+
+    return NONE;
 }
 
 // ---

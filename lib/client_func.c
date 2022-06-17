@@ -19,38 +19,39 @@ void update_windows_client(ui interface, char dest[][MAX_WORLD_SIZE], point map_
 
             char c = dest[i][j];
 
-            switch(c) {
-                case MAP_WALL:
-                    wattron(game_window, COLOR_PAIR(WALL));
-                    c = MAP_EMPTY;
-                    break;
-                case '1' || '2' || '3' || '4':
-                    wattron(game_window, COLOR_PAIR(PLAYER));
-                    break;
-                case MAP_BEAST:
-                    wattron(game_window, COLOR_PAIR(ENEMY));
-                    break;
-                case MAP_CAMPSITE:
-                    wattron(game_window, COLOR_PAIR(CAMPSITE));
-                    break;
-                case MAP_BUSHES:
-                    wattron(game_window, COLOR_PAIR(BUSHES));
-                    break;
-                case MAP_COIN_1:
-                    wattron(game_window, COLOR_PAIR(COIN));
-                    break;
-                case MAP_COIN_10:
-                    wattron(game_window, COLOR_PAIR(COIN));
-                    break;
-                case MAP_COIN_50:
-                    wattron(game_window, COLOR_PAIR(COIN));
-                    break;
-                case MAP_COIN_DROPPED:
-                    wattron(game_window, COLOR_PAIR(COIN));
-                    break;
-                default:
-                    wattron(game_window, COLOR_PAIR(DEFAULT));
-                    break;
+            if(c == '1' || c == '2' || c == '3' || c == '4') {
+                wattron(game_window, COLOR_PAIR(PLAYER));
+            } else {
+                switch(c) {
+                    case MAP_WALL:
+                        wattron(game_window, COLOR_PAIR(WALL));
+                        c = MAP_EMPTY;
+                        break;
+                    case MAP_BEAST:
+                        wattron(game_window, COLOR_PAIR(ENEMY));
+                        break;
+                    case MAP_CAMPSITE:
+                        wattron(game_window, COLOR_PAIR(CAMPSITE));
+                        break;
+                    case MAP_BUSHES:
+                        wattron(game_window, COLOR_PAIR(BUSHES));
+                        break;
+                    case MAP_COIN_1:
+                        wattron(game_window, COLOR_PAIR(COIN));
+                        break;
+                    case MAP_COIN_10:
+                        wattron(game_window, COLOR_PAIR(COIN));
+                        break;
+                    case MAP_COIN_50:
+                        wattron(game_window, COLOR_PAIR(COIN));
+                        break;
+                    case MAP_COIN_DROPPED:
+                        wattron(game_window, COLOR_PAIR(COIN));
+                        break;
+                    default:
+                        wattron(game_window, COLOR_PAIR(DEFAULT));
+                        break;
+                }
             }
 
             mvwprintw(game_window, MAP_Y + i, MAP_X + j, "%c", c);

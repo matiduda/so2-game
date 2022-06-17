@@ -4,7 +4,7 @@ void init_colors() {
     init_pair(DEFAULT, COLOR_WHITE, COLOR_BLACK);
     init_pair(WALL, COLOR_BLACK, COLOR_WHITE);
 
-    init_pair(PLAYER, COLOR_WHITE, COLOR_CYAN);
+    init_pair(PLAYER, COLOR_WHITE, COLOR_BLUE);
     init_pair(ENEMY, COLOR_RED, COLOR_BLACK);
     init_pair(COIN, COLOR_BLACK, COLOR_YELLOW);
     init_pair(CAMPSITE, COLOR_YELLOW, COLOR_RED);

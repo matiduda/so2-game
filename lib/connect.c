@@ -7,7 +7,6 @@ void player_connection_cleanup(void* data)
 
     // Delete FIFO
     unlink(d->fifo_path);
-    close(d->fifo_fd);
 }
 
 void* player_connection(void* player_struct)
@@ -139,7 +138,7 @@ void create_response(player *player, server_data *response) {
     response->round_number = player->round_number;
     response->type = player->type;
     response->deaths = player->deaths;
-    response->coins_carried = player->coins_carried;
+    response->coins_carried = player->coins_found;
     response->coins_brought = player->coins_brought;
 }
 
