@@ -121,7 +121,7 @@ int main(int argc, char* argv)
 
     info_client client_info;
 
-    while (data.key != 'q' && data.key != 'Q') {
+    while (1) {
         data.key = ' ';
 
         pthread_mutex_lock(&key_info.mutex);
@@ -131,27 +131,25 @@ int main(int argc, char* argv)
 
         // SEND
 
-        int w = write(client_request, &data, sizeof(client_data));
-        if (w == -1) {
-            break;
-        }
+        int ret = 0;
+        
+        while (ret = write(client_request, &data, sizeof(client_data)) == -1 && errno == EINTR)
+            continue;
+        if (ret == -1)
+            return close(client_request), perror("WRITE ERROR\n"), 9;
 
         // RECEIVE
 
-        int r = read(server_response, &response, sizeof(server_data));
-        if (r == -1) {
-                printf("READ ERROR\n");
+        while (ret = read(server_response, &response, sizeof(server_data)) == -1 && errno == EINTR)
+            continue;
+        if (ret == -1)
+            return close(client_request), perror("READ ERROR\n"), 9;
 
-            // FIFO Reading error
-            close(client_request);
-            return 9;
-        }
 
         if(frame_counter == 0)
-            init_windows(&interface, response.world_size, 12, 50);
+            init_windows(&interface, response.world_size, 16, 50);
 
         interface.world_size = response.world_size;
-
         client_info.response = &response;
 
         print_info_client(interface.stat_window, &client_info);
@@ -159,6 +157,9 @@ int main(int argc, char* argv)
         update_windows_client(interface, response.map, response.player_position);
 
         usleep(1000 * 100 * wait_tenth_of_second);
+
+        if(data.key == 'q' || data.key == 'Q')
+            break;
     }
 
     pthread_cancel(keyboard_input);

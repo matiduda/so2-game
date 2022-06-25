@@ -4,7 +4,7 @@
 void player_connection_cleanup(void* data)
 {
     struct thread_data_t* d = (struct thread_data_t*)data;
-
+    printf("Unlinking %s...\n", d->fifo_path);
     // Delete FIFO
     unlink(d->fifo_path);
 }
@@ -63,6 +63,7 @@ void* player_connection(void* player_struct)
         }
 
         p->move = data.key;
+        p->PID = data.pid;
 
         sem_post(&(p->received_data));
 
@@ -75,11 +76,12 @@ void* player_connection(void* player_struct)
         if (getpgid(data.pid) < 0) {
 
             clean_up_after_client(p->ID);
-
+            p->is_connected = 0;
             int rec = reconnect_client(&client_request, &server_response, request_fifo_path, response_fifo_path);
             if (rec)
                 return NULL;
 
+            p->is_connected = 1;
             randomize_player_spawn(p);
 
             continue;
@@ -102,11 +104,13 @@ void* player_connection(void* player_struct)
         }
 
         if (data.key == 'q' || data.key == 'Q') {
+            p->is_connected = 0;
 
             int rec = reconnect_client(&client_request, &server_response, request_fifo_path, response_fifo_path);
             if (rec)
                 return NULL;
 
+            p->is_connected = 1;
             randomize_player_spawn(p);
 
 
@@ -140,6 +144,9 @@ void create_response(player *player, server_data *response) {
     response->deaths = player->deaths;
     response->coins_carried = player->coins_found;
     response->coins_brought = player->coins_brought;
+    response->pid = player->server_PID;
+    response->campsite_xy.x = player->campsite_xy.x;
+    response->campsite_xy.y = player->campsite_xy.y;
 }
 
 int reconnect_client(int* request_fd, int* response_fd, char* request_path, char* response_path)

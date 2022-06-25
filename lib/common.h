@@ -80,6 +80,7 @@ typedef struct payload_server_response {
     char map[MAX_WORLD_SIZE][MAX_WORLD_SIZE];
     point world_size;
     point player_position;
+    point campsite_xy;
     pid_t pid;
     int ok;
     int number;

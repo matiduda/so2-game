@@ -6,7 +6,7 @@
 // Data specific to the client
 
 typedef struct game_info_client {
-    int client_PID;
+    pid_t client_PID;
     point campsite_xy;
     server_data *response;
 } info_client;

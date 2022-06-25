@@ -8,9 +8,10 @@ int main(int argc, char** argv)
 
     // Server constants
     char map[MAX_WORLD_SIZE][MAX_WORLD_SIZE] = { 0 };
-    
+
     point world_size;
-    int load = load_map(MAP_LOCATION, map, &world_size);
+    point campsite_xy = { 0 };
+    int load = load_map(MAP_LOCATION, map, &world_size, &campsite_xy);
 
     if (load != 0) {
         switch (load) {
@@ -19,6 +20,9 @@ int main(int argc, char** argv)
             break;
         case 2:
             printf("[__SERVER__]: map_load() error: File i/o error\n");
+            break;
+        case 3:
+            printf("[__SERVER__]: map_load() error: Could not locate campsite `%c`\n", MAP_CAMPSITE);
             break;
         default:
             printf("[__SERVER__]: map_load() error: Invalid character detected: `%c`\n", load);
@@ -33,7 +37,7 @@ int main(int argc, char** argv)
     raw();
     keypad(stdscr, TRUE);
     curs_set(0);
-    
+
     start_color();
     init_colors();
 
@@ -55,7 +59,7 @@ int main(int argc, char** argv)
     pthread_t player_thr[4];
 
     for (int i = 0; i < CLIENTS; i++) {
-        players[i] = init_player(i);
+        players[i] = init_player(i, campsite_xy);
         pthread_create(&player_thr[i], NULL, player_connection, &players[i]);
     }
 
@@ -75,10 +79,10 @@ int main(int argc, char** argv)
     server_info.player_count = 4;
     server_info.players = players;
     server_info.round_number = 0;
+    server_info.campsite_xy.x = campsite_xy.x;
+    server_info.campsite_xy.y = campsite_xy.y;
 
     // ------------------ GAME LOOP ------------------
-
-    printw("Waiting for connection...\n");
 
     while (true) {
 
@@ -88,48 +92,50 @@ int main(int argc, char** argv)
         pthread_mutex_unlock(&key_info.mutex);
 
         if (closing_key == 'q' || closing_key == 'Q') {
-
-            for (int i = 0; i < CLIENTS; i++) {
-                pthread_cancel(player_thr[i]);
-            }
-
             break;
         }
 
-        int has_connected_clients = 0;
-
-        for (int i = 0; i < CLIENTS; i++) {
-
+        copy_raw_map_data(map);
+        
+        for (int i = 0; i < CLIENTS; i++) { // Calculate player positions
+ 
             if (players[i].is_connected) {
-                has_connected_clients++;
 
                 // Wait for data from connected client
-                while(sem_wait(&players[i].received_data) != 0) {
-                    if(errno != EINTR)
+                while (sem_wait(&players[i].received_data) != 0) {
+                    if (errno != EINTR)
                         return perror("semaphore error, errno : "), printf("%d\n", errno), 10;
                 }
+                
+                calculate_player(&players[i], map);
+                draw_player(&players[i], map);
+            }
+        }
 
-                update_player(&players[i], map);
-                copy_raw_map_data(map);
+        for (int i = 0; i < CLIENTS; i++) { // Update player views
 
-                print_info_server(interface.stat_window, &server_info);
+            if (players[i].is_connected) {
 
-                print_legend(interface.legend, 1, 1);
-                update_windows_server(interface, map);
+                update_player(&players[i], map, server_info.round_number);
 
-                server_info.round_number++;
-
-                while(sem_post(&players[i].map_calculated) != 0) {
-                    if(errno != EINTR)
+                while (sem_post(&players[i].map_calculated) != 0) {
+                    if (errno != EINTR)
                         return perror("semaphore error, errno : "), printf("%d\n", errno), 10;
                 }
             }
         }
+
+        server_info.round_number++;
+
+        print_info_server(interface.stat_window, &server_info);
+        print_legend(interface.legend, 0, 1);
+        update_windows_server(interface, map);
 
         sleep(1);
     }
 
     for (int i = 0; i < CLIENTS; i++) {
+        pthread_cancel(player_thr[i]);
         pthread_join(player_thr[i], NULL);
         sem_destroy(&players[i].received_data);
     }

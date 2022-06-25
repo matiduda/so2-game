@@ -74,9 +74,9 @@ void print_info_client(WINDOW *w, info_client *info) {
     const int Y = 1;
     const int X = 1;
 
-    mvwprintw(w, Y + 0,  X + 0, "Server's PID: %d", info->response->pid);
+    mvwprintw(w, Y + 0,  X + 0, "Server's PID: %ld", (long)info->response->pid);
 
-    mvwprintw(w, Y + 2,  X + 0, "Campsite X/Y: %02d/%02d", info->campsite_xy.x, info->campsite_xy.y);
+    mvwprintw(w, Y + 2,  X + 0, "Campsite X/Y: %02d/%02d", info->response->campsite_xy.x, info->response->campsite_xy.y);
     mvwprintw(w, Y + 3,  X + 0, "Round number: %d", info->response->round_number);
 
     mvwprintw(w, Y + 5,  X + 0, "Player:");
