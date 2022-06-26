@@ -6,16 +6,17 @@
 - [ ] Bot client
 - [ ] Bot client - run away from enemy
 - [ ] Create dropped treasure after player death
-- [ ] Server - draw players on server view
-- [ ] Server - fix player info on disconnect
 - [ ] Server - add key behaviour:
     - [ ] B/b – dodanie jednej bestii w losowym miejscu labiryntu,
-    - [ ] c/t/T – dodanie nowej monety, skarbu, dużego skarbu w losowym miejscu labiryntu,
-    - [ ] Q/q – zakończenie gry.
+    - [x] c/t/T – dodanie nowej monety, skarbu, dużego skarbu w losowym miejscu labiryntu,
+    - [x] Q/q – zakończenie gry.
+
+- [x] Server - draw players on server view
+- [x] Server - fix player info on disconnect
 
 ## How to build
 
-You must have `ncurses` library installed. You can do this by using the following command
+To build the game you have to have `ncurses` library installed. You can do this by using the following command
 ```sh
 sudo apt-get install libncurses5-dev
 ```

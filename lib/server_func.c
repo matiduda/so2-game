@@ -2,6 +2,7 @@
 
 char MAP_ORIGINAL[MAX_WORLD_SIZE][MAX_WORLD_SIZE] = { 0 };
 point MAP_SIZE = { 0, 0 };
+treasure treasures[MAX_DROPPED_T] = { 0 };
 
 void update_windows_server(ui interface, char dest[][MAX_WORLD_SIZE])
 {
@@ -233,6 +234,90 @@ int load_map(char* filepath, char dest[][MAX_WORLD_SIZE], point* size_res, point
     return 0;
 }
 
+void coin_spawn(char type)
+{
+    int x, y;
+
+    while (true) {
+        x = rand() % (MAP_SIZE.x + 1);
+        y = rand() % (MAP_SIZE.y + 1);
+
+        if (MAP_ORIGINAL[y][x] == MAP_EMPTY) {
+            switch (type) {
+            case 'c':
+                MAP_ORIGINAL[y][x] = MAP_COIN_1;
+                return;
+            case 't':
+                MAP_ORIGINAL[y][x] = MAP_COIN_10;
+                return;
+            case 'T':
+                MAP_ORIGINAL[y][x] = MAP_COIN_50;
+                return;
+            default:
+                return;
+            }
+        }
+    }
+}
+
+// ---
+
+void calculate_treasures(player* players)
+{
+    for (int i = 0; i < PLAYER_COUNT; i++) {
+        for (int j = 0; j < PLAYER_COUNT; j++) {
+            if (i != j) {
+                // If player positions are the same
+                if (players[i].pos.y == players[j].pos.y && players[i].pos.x == players[j].pos.x) {
+                    save_treasure(players[i].pos, players[i].coins_found + players[j].coins_found);
+                    players[i].coins_found = 0;
+                    players[i].deaths++;
+                    players[i].pos.x = players[i].spawn_location.x;
+                    players[i].pos.y = players[i].spawn_location.y;
+
+                    players[j].coins_found = 0;
+                    players[j].deaths++;
+                    players[j].pos.x = players[j].spawn_location.x;
+                    players[j].pos.y = players[j].spawn_location.y;
+                }
+            }
+        }
+    }
+}
+
+void save_treasure(point p, int value)
+{
+    for (int i = 0; i < MAX_DROPPED_T; i++) {
+        if (treasures[i].value == 0) {
+
+            treasures[i].value = value;
+            treasures[i].position = p;
+
+            MAP_ORIGINAL[treasures[i].position.y][treasures[i].position.x] = MAP_COIN_DROPPED;
+
+            return;
+        }
+    }
+}
+
+int get_treasure(point p)
+{
+    for (int i = 0; i < MAX_DROPPED_T; i++) {
+        if (treasures[i].position.x == p.x && treasures[i].position.y == p.y) {
+
+            int c = treasures[i].value;
+            treasures[i].value = 0;
+
+            MAP_ORIGINAL[treasures[i].position.y][treasures[i].position.x] = MAP_EMPTY;
+
+            return c;
+        }
+    }
+    return 0;
+}
+
+// ---
+
 player init_player(int id, point campsite)
 {
     player p = { 0 };
@@ -298,6 +383,8 @@ void calculate_player(player* player, char map[][MAX_WORLD_SIZE])
 
     enum player_action action = get_action(map[player->pos.y + d_pos.y][player->pos.x + d_pos.x]);
 
+    point to_save = { player->pos.x + d_pos.x, player->pos.y + d_pos.y };
+
     switch (action) {
     case IN_WALL: {
         d_pos.x = 0;
@@ -326,8 +413,7 @@ void calculate_player(player* player, char map[][MAX_WORLD_SIZE])
             player->coins_found += 50;
             break;
         case MAP_COIN_DROPPED:
-            // TODO: Lookup for custom treasure
-            player->coins_found = 99;
+            player->coins_found = get_treasure(to_save);
             break;
         }
 
@@ -335,7 +421,9 @@ void calculate_player(player* player, char map[][MAX_WORLD_SIZE])
         MAP_ORIGINAL[player->pos.y + d_pos.y][player->pos.x + d_pos.x] = MAP_EMPTY;
         break;
     }
-    case IS_DEAD: {
+    case HITS_ENEMY: {
+        save_treasure(to_save, player->coins_found);
+        player->coins_found = 0;
         player->deaths++;
         d_pos.x = 0;
         d_pos.y = 0;
@@ -368,7 +456,7 @@ void update_player(player* player, char map[][MAX_WORLD_SIZE], int round_number)
     /█T█  /
     ///////
     */
-   
+
     if (!player)
         return;
 
@@ -415,8 +503,8 @@ enum player_action get_action(char new_location)
     if (new_location == MAP_COIN_1 || new_location == MAP_COIN_10 || new_location == MAP_COIN_50 || new_location == MAP_COIN_DROPPED)
         return GETS_TREASURE;
 
-    if (new_location == MAP_BEAST || new_location == '1' || new_location == '2' || new_location == '3' || new_location == '4')
-        return IS_DEAD;
+    if (new_location == MAP_BEAST)
+        return HITS_ENEMY;
 
     if (new_location == MAP_BUSHES)
         return IN_BUSHES;

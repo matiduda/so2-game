@@ -91,8 +91,17 @@ int main(int argc, char** argv)
         key_info.key = 0;
         pthread_mutex_unlock(&key_info.mutex);
 
+
         if (closing_key == 'q' || closing_key == 'Q') {
             break;
+        }
+
+        if (closing_key == 'c' || closing_key == 't' || closing_key == 'T') {
+            coin_spawn(closing_key);
+        }
+
+        if (closing_key == 'b' || closing_key == 'B') {
+            // Spawn new enemy
         }
 
         copy_raw_map_data(map);
@@ -109,8 +118,11 @@ int main(int argc, char** argv)
                 
                 calculate_player(&players[i], map);
                 draw_player(&players[i], map);
+
             }
         }
+
+        calculate_treasures(players);
 
         for (int i = 0; i < CLIENTS; i++) { // Update player views
 

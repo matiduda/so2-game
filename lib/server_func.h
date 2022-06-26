@@ -4,8 +4,9 @@
 #include "common.h"
 
 #define ROUND_TIME_IN_SECONDS 5
-
+#define MAX_DROPPED_T 10
 #define MAP_LOCATION "map.txt"
+#define PLAYER_COUNT 4
 
 // Data specific to the server
 
@@ -13,7 +14,7 @@ enum player_action { NONE,
     IN_WALL,
     IN_BUSHES,
     GETS_TREASURE,
-    IS_DEAD,
+    HITS_ENEMY,
     IN_CAMPSITE };
 
 typedef struct player_info {
@@ -46,13 +47,22 @@ typedef struct game_info_server {
     int round_number;
 } info_server;
 
+typedef struct dropped_treasure {
+    point position;
+    int value;
+} treasure;
+
 void update_windows_server(ui interface, char dest[][MAX_WORLD_SIZE]);
 void print_info_server(WINDOW* w, info_server* info);
 
 int load_map(char* filepath, char dest[][MAX_WORLD_SIZE], point* size_res, point* campsite);
 void copy_raw_map_data(char map[][MAX_WORLD_SIZE]);
 void draw_player(player* player, char map[][MAX_WORLD_SIZE]);
+void coin_spawn(char type);
 
+void calculate_treasures(player *players);
+void save_treasure(point p, int value);
+int get_treasure(point p);
 
 player init_player(int id, point campsite);
 void randomize_player_spawn(player* p);
