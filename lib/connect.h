@@ -1,14 +1,14 @@
 #ifndef CONNECT_H
 #define CONNECT_H
 
+#include "common.h"
+#include "server_func.h"
 #include <dirent.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include "common.h"
-#include "server_func.h"
 
 void* player_connection(void* player_struct);
 void player_connection_cleanup(void* data);
@@ -18,6 +18,8 @@ int make_fifo(char* path);
 
 void clean_up_after_client(int id);
 
-void create_response(player *player, server_data *response);
+void create_response(player* player, server_data* response);
+
+void* enemy_connection(void* enemy_struct);
 
 #endif // CONNECT_H

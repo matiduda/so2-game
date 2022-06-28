@@ -2,17 +2,17 @@
 
 ## TODO:
 
-- [ ] Enemy client
+- [x] Enemy client
 - [ ] Bot client
 - [ ] Bot client - run away from enemy
-- [ ] Create dropped treasure after player death
-- [ ] Server - add key behaviour:
-    - [ ] B/b – dodanie jednej bestii w losowym miejscu labiryntu,
-    - [x] c/t/T – dodanie nowej monety, skarbu, dużego skarbu w losowym miejscu labiryntu,
-    - [x] Q/q – zakończenie gry.
-
+- [x] Create dropped treasure after player death
 - [x] Server - draw players on server view
 - [x] Server - fix player info on disconnect
+- [x] Server - add key behaviour:
+    - [x] B/b – add enemy to random tile
+    - [x] c/t/T – add a coin, a treasure or a large treasure
+    - [x] Q/q – quit
+
 
 ## How to build
 

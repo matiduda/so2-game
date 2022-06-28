@@ -1,11 +1,18 @@
-#include "../lib/common.h"
 #include "../lib/client_func.h"
+#include "../lib/common.h"
+
+enum keys { K_DOWN = 258,
+    K_UP,
+    K_LEFT,
+    K_RIGHT };
 
 int main(int argc, char* argv)
 {
+    srand(time(NULL));
+
     // Ignore 'pipe closed' signal so program continues
     signal(SIGPIPE, SIG_IGN);
-    
+
     initscr();
     noecho();
     raw();
@@ -19,7 +26,6 @@ int main(int argc, char* argv)
 
     char map[MAX_WORLD_SIZE][MAX_WORLD_SIZE] = { 0 };
 
-    
     if (make_folder_if_not_created(FIFO_LOCATION_FOLDER)) {
         return 3;
     }
@@ -112,22 +118,46 @@ int main(int argc, char* argv)
     server_data response;
 
     data.pid = getpid();
+    data.bot = 1;
     int frame_counter = 0;
 
     info_client client_info;
 
+    int key = rand() % 5;
+
+    switch (key) {
+    case 1:
+        key = K_UP;
+        break;
+    case 2:
+        key = K_DOWN;
+        break;
+    case 3:
+        key = K_LEFT;
+        break;
+    case 4:
+        key = K_RIGHT;
+        break;
+    }
+
     while (1) {
-        data.key = ' ';
+        
+        int close_key = 0;
 
         pthread_mutex_lock(&key_info.mutex);
-        data.key = key_info.key;
+        close_key = key_info.key;
         key_info.key = 0;
         pthread_mutex_unlock(&key_info.mutex);
 
+        if(close_key == 'q' || close_key == 'Q')
+            break;
+
         // SEND
 
+        data.key = key;
+
         int ret = 0;
-        
+
         while (ret = write(client_request, &data, sizeof(client_data)) == -1 && errno == EINTR)
             continue;
         if (ret == -1)
@@ -140,8 +170,7 @@ int main(int argc, char* argv)
         if (ret == -1)
             return close(client_request), perror("READ ERROR\n"), 9;
 
-
-        if(frame_counter == 0)
+        if (frame_counter == 0)
             init_windows(&interface, response.world_size, 16, 50);
 
         interface.world_size = response.world_size;
@@ -150,15 +179,71 @@ int main(int argc, char* argv)
         print_info_client(interface.stat_window, &client_info);
         print_legend(interface.legend, 0, 1);
         update_windows_client(interface, response.map, response.player_position);
-        
+
         wrefresh(interface.stat_window);
         wrefresh(interface.legend);
         wrefresh(interface.game_window);
         refresh();
         usleep(1000 * 100 * ROUND_TIME_IN_SEC10TH);
 
-        if(data.key == 'q' || data.key == 'Q')
+        if (data.key == 'q' || data.key == 'Q')
             break;
+
+        key = rand() % 5;
+
+        switch (key) {
+        case 1:
+            key = K_UP;
+            break;
+        case 2:
+            key = K_DOWN;
+            break;
+        case 3:
+            key = K_LEFT;
+            break;
+        case 4:
+            key = K_RIGHT;
+            break;
+        }
+
+        // Check for enemy
+
+        // Check vertical and horizontal lines
+
+        int y_offset = response.player_position.y - CLIENT_FOV;
+        int x_offset = response.player_position.x - CLIENT_FOV;
+
+        const int map_half = CLIENT_MAP_SIZE / 2;
+
+        point enemy_found = { -1, -1 };
+
+        for (int j = 0; j < CLIENT_MAP_SIZE; j++) {
+            if (response.map[y_offset + map_half][x_offset + j] == MAP_BEAST) {
+                enemy_found.y = j;
+                enemy_found.x = map_half;
+                break;
+            }
+            if (response.map[y_offset + j][x_offset + map_half] == MAP_BEAST) {
+                enemy_found.y = map_half;
+                enemy_found.x = j;
+                break;
+            }
+        }
+
+        if (enemy_found.x != -1) {
+            if (enemy_found.y < map_half && response.map[y_offset + map_half][x_offset + map_half + 1] != MAP_WALL) {
+                key = K_RIGHT;
+            }
+            if (enemy_found.y > map_half && response.map[y_offset + map_half][x_offset + map_half - 1] != MAP_WALL) {
+                key = K_LEFT;
+            }
+            if (enemy_found.x < map_half && response.map[y_offset + map_half + 1][x_offset + map_half] != MAP_WALL) {
+                key = K_DOWN;
+            }
+            if (enemy_found.x > map_half && response.map[y_offset + map_half - 1][x_offset + map_half] != MAP_WALL) {
+                key = K_UP;
+            }
+        }
 
         frame_counter++;
     }

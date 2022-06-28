@@ -348,8 +348,8 @@ void randomize_player_spawn(player* p)
     point spawn;
 
     while (true) {
-        spawn.x = rand() % (MAP_SIZE.x + 1);
-        spawn.y = rand() % (MAP_SIZE.y + 1);
+        spawn.x = rand() % (MAP_SIZE.x - 1) + 1;
+        spawn.y = rand() % (MAP_SIZE.y - 1) + 1;
 
         if (MAP_ORIGINAL[spawn.y][spawn.x] == MAP_EMPTY)
             break;
@@ -357,6 +357,20 @@ void randomize_player_spawn(player* p)
 
     p->spawn_location = spawn;
     p->pos = spawn;
+}
+
+point randomize_enemy_spawn()
+{
+    point spawn;
+
+    while (true) {
+        spawn.x = rand() % (MAP_SIZE.x - 1) + 1;
+        spawn.y = rand() % (MAP_SIZE.y - 1) + 1;
+
+        if (MAP_ORIGINAL[spawn.y][spawn.x] == MAP_EMPTY)
+            break;
+    }
+    return spawn;
 }
 
 void calculate_player(player* player, char map[][MAX_WORLD_SIZE])
@@ -516,3 +530,70 @@ enum player_action get_action(char new_location)
 }
 
 // ---
+
+void create_enemy_map(point pos, struct enemy_view* view, char map[][MAX_WORLD_SIZE])
+{
+
+    for (int i = 0; i < ENEMY_MAP_SIZE; i++) {
+        int y = pos.y - ENEMY_FOV;
+
+        for (int j = 0; j < ENEMY_MAP_SIZE; j++) {
+            int x = pos.x - ENEMY_FOV;
+
+            // Check for out of bounds
+            if (i + y < 0 || i + y > MAP_SIZE.y || j + x < 0 || j + x > MAP_SIZE.x)
+                view->map[i][j] = 'X';
+            else
+                view->map[i][j] = map[i + y][j + x];
+        }
+    }
+}
+
+void check_player_on_enemy(player* player, point enemy_location)
+{
+    if (player->pos.x == enemy_location.x && player->pos.y == enemy_location.y) {
+
+        point to_save = { player->pos.x, player->pos.y };
+        save_treasure(to_save, player->coins_found);
+
+        player->coins_found = 0;
+        player->deaths++;
+
+        player->pos.x = player->spawn_location.x;
+        player->pos.y = player->spawn_location.y;
+
+        player->move = 0;
+    }
+}
+
+void update_enemies(enemy_info* enemies)
+{
+
+    for (int i = 0; i < enemies->active_enemies; i++) {
+
+        point d_pos = { 0 };
+
+        switch (enemies->response.direction[i]) {
+        case UP: // UP:
+            d_pos.y--;
+            break;
+        case DOWN: // DOWN
+            d_pos.y++;
+            break;
+        case LEFT: // LEFT
+            d_pos.x--;
+            break;
+        case RIGHT: // RIGHT
+            d_pos.x++;
+            break;
+        }
+
+        enemies->request.positions[i].y += d_pos.y;
+        enemies->request.positions[i].x += d_pos.x;
+    }
+}
+
+void draw_enemy(point location, char map[][MAX_WORLD_SIZE])
+{
+    map[location.y][location.x] = MAP_BEAST;
+}

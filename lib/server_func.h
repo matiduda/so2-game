@@ -3,7 +3,6 @@
 
 #include "common.h"
 
-#define ROUND_TIME_IN_SECONDS 5
 #define MAX_DROPPED_T 10
 #define MAP_LOCATION "map.txt"
 #define PLAYER_COUNT 4
@@ -52,6 +51,15 @@ typedef struct dropped_treasure {
     int value;
 } treasure;
 
+typedef struct server_enemy_info {
+    int enemy_client_connected;
+    int active_enemies;
+    struct enemy_request request;
+    struct enemy_response response;
+    sem_t request_ready;
+    sem_t received_response;
+} enemy_info;
+
 void update_windows_server(ui interface, char dest[][MAX_WORLD_SIZE]);
 void print_info_server(WINDOW* w, info_server* info);
 
@@ -60,7 +68,7 @@ void copy_raw_map_data(char map[][MAX_WORLD_SIZE]);
 void draw_player(player* player, char map[][MAX_WORLD_SIZE]);
 void coin_spawn(char type);
 
-void calculate_treasures(player *players);
+void calculate_treasures(player* players);
 void save_treasure(point p, int value);
 int get_treasure(point p);
 
@@ -70,4 +78,9 @@ void calculate_player(player* player, char map[][MAX_WORLD_SIZE]);
 void update_player(player* player, char map[][MAX_WORLD_SIZE], int round_number);
 enum player_action get_action(char new_location);
 
+point randomize_enemy_spawn();
+void create_enemy_map(point pos, struct enemy_view* view, char map[][MAX_WORLD_SIZE]);
+void check_player_on_enemy(player *player, point enemy_location);
+void update_enemies(enemy_info* enemies);
+void draw_enemy(point location, char map[][MAX_WORLD_SIZE]);
 #endif // SERVER_H

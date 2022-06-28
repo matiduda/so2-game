@@ -32,8 +32,8 @@ void* player_connection(void* player_struct)
     if (mkfifo(request_fifo_path, 0777) < 0)
         if (errno != EEXIST)
             return printf("[%s]: ", p->name), perror("could not create FIFO"), NULL;
-        // else
-            // FIFO already exists, no problem
+    // else
+    // FIFO already exists, no problem
 
     // Waif for client to connect
 
@@ -64,6 +64,7 @@ void* player_connection(void* player_struct)
 
         p->move = data.key;
         p->PID = data.pid;
+        p->type = data.bot;
 
         sem_post(&(p->received_data));
 
@@ -113,7 +114,6 @@ void* player_connection(void* player_struct)
             p->is_connected = 1;
             randomize_player_spawn(p);
 
-
             continue;
         }
     }
@@ -127,15 +127,16 @@ void* player_connection(void* player_struct)
     return NULL;
 }
 
-void create_response(player *player, server_data *response) {
-    if(!player || !response)
+void create_response(player* player, server_data* response)
+{
+    if (!player || !response)
         return;
 
-   	for(int i = 0; i < player->world_size.y; i++) {
-		for(int j = 0; j < player->world_size.x; j++) {
+    for (int i = 0; i < player->world_size.y; i++) {
+        for (int j = 0; j < player->world_size.x; j++) {
             response->map[i][j] = player->map[i][j];
-		}
-	}
+        }
+    }
     response->world_size = player->world_size;
     response->player_position = player->pos;
     response->number = player->ID;
@@ -221,4 +222,96 @@ void clean_up_after_client(int id)
     char client_out_fifo[MAXLEN];
     create_fifo_path(client_out_fifo, id, SERVER_DATA_FIFO_PATH);
     unlink(client_out_fifo);
+}
+
+void* enemy_connection(void* enemy_struct)
+{
+    struct thread_data_t thread_data;
+    pthread_cleanup_push(player_connection_cleanup, &thread_data);
+
+    enemy_info* e = (enemy_info*)enemy_struct;
+
+    char request_fifo_path[MAXLEN];
+    char response_fifo_path[MAXLEN];
+
+    if (create_fifo_path(request_fifo_path, 0, CLIENT_DATA_FIFO_PATH) != 0)
+        return printf("[ENEMY]: incorrect FIFO path length"), NULL;
+
+    thread_data.fifo_path = request_fifo_path;
+
+    if (create_fifo_path(response_fifo_path, 0, SERVER_DATA_FIFO_PATH) != 0)
+        return printf("[ENEMY]: incorrect FIFO send path length"), NULL;
+
+    // ---------------------- Client data (server read) ----------------------
+
+    if (mkfifo(request_fifo_path, 0777) < 0)
+        if (errno != EEXIST)
+            return printf("[ENEMY]: "), perror("could not create FIFO"), NULL;
+    // else
+    // FIFO already exists, no problem
+
+    // Waif for client to connect
+
+    int client_request = open(request_fifo_path, O_RDONLY);
+    if (client_request < 0)
+        return printf("[ENEMY]: "), perror("Could not open client FIFO (read)"), NULL;
+
+    thread_data.fifo_fd = client_request;
+
+    // ---------------------- Server data (server write) ----------------------
+
+    e->enemy_client_connected = 1;
+
+    int server_response = open(response_fifo_path, O_WRONLY);
+    if (server_response < 0)
+        return printf("[ENEMY]: "), perror("Could not open server FIFO (write)"), NULL;
+
+    while (1) {
+
+        // Wait for trigger from server
+
+        while (sem_wait(&e->request_ready) != 0)
+            if (errno != EINTR)
+                return perror("semaphore error, errno : "), printf("%d\n", errno), NULL;
+
+        // Send and receive data
+        
+        int w = write(server_response, &e->request, sizeof(struct enemy_request));
+        if (w == -1) {
+            // FIFO Write error
+            // Close all communication
+            close(client_request);
+            return NULL;
+        }
+
+        int r = read(client_request, &e->response, sizeof(struct enemy_response));
+        if (r == -1) {
+            // FIFO Reading error
+            close(client_request);
+            return NULL;
+        }
+
+        while (sem_post(&e->received_response) != 0)
+            if (errno != EINTR)
+                return perror("semaphore error, errno : "), printf("%d\n", errno), NULL;
+
+        // Check if the program was not force closed
+
+        if (getpgid(e->response.client_pid) < 0) {
+            e->enemy_client_connected = 0;
+            clean_up_after_client(0);
+            // Delete FIFO
+            close(client_request);
+            unlink(request_fifo_path);
+            return NULL;
+        }
+    }
+
+    // Delete FIFO
+    close(client_request);
+    unlink(request_fifo_path);
+
+    pthread_cleanup_pop(player_connection_cleanup);
+
+    return NULL;
 }

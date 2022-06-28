@@ -6,12 +6,10 @@ void update_windows_client(ui interface, char dest[][MAX_WORLD_SIZE], point map_
     WINDOW *stat_window = interface.stat_window;
     WINDOW *legend = interface.legend;
 
-    // werase(stat_window);
-    // werase(game_window);
-    // // werase(legend);
-    
     int MAP_Y = map_center.y - CLIENT_FOV + 1;
     int MAP_X = map_center.x - CLIENT_FOV + 1;
+
+    werase(game_window);
 
     for(int i = 0; i < CLIENT_MAP_SIZE; i++) {
 
@@ -61,10 +59,6 @@ void update_windows_client(ui interface, char dest[][MAX_WORLD_SIZE], point map_
     wattron(game_window, COLOR_PAIR(1));
 
     box(game_window, 0, 0);
-
-    wrefresh(stat_window);
-    wrefresh(legend);
-    wrefresh(game_window);
 }
 
 void print_info_client(WINDOW *w, info_client *info) {
@@ -101,5 +95,6 @@ void print_info_client(WINDOW *w, info_client *info) {
 
     mvwprintw(w, Y + 12, X + xoff, "%d", info->response->coins_carried);
     mvwprintw(w, Y + 13, X + xoff, "%d", info->response->coins_brought);
-       
+
+    wrefresh(w);
 }

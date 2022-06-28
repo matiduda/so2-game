@@ -72,6 +72,13 @@ int main(int argc, char** argv)
         return 4;
     }
 
+    enemy_info enemy;
+    sem_init(&enemy.request_ready, 0, 0);
+    sem_init(&enemy.received_response, 0, 0);
+
+    pthread_t enemy_thr;
+    pthread_create(&enemy_thr, NULL, enemy_connection, &enemy);
+
     char closing_key = 0;
 
     info_server server_info;
@@ -91,7 +98,6 @@ int main(int argc, char** argv)
         key_info.key = 0;
         pthread_mutex_unlock(&key_info.mutex);
 
-
         if (closing_key == 'q' || closing_key == 'Q') {
             break;
         }
@@ -101,49 +107,95 @@ int main(int argc, char** argv)
         }
 
         if (closing_key == 'b' || closing_key == 'B') {
-            // Spawn new enemy
+            if (enemy.enemy_client_connected && enemy.active_enemies < ENEMY_MAX_ENEMIES) {
+                // Spawn new enemy
+                enemy.request.positions[enemy.active_enemies] = randomize_enemy_spawn();
+                enemy.active_enemies++;
+                enemy.request.active_enemies++;
+            }
         }
 
         copy_raw_map_data(map);
-        
+
+        int players_are_connected = 0;
+
         for (int i = 0; i < CLIENTS; i++) { // Calculate player positions
- 
+
             if (players[i].is_connected) {
+                players_are_connected++;
 
                 // Wait for data from connected client
                 while (sem_wait(&players[i].received_data) != 0) {
                     if (errno != EINTR)
                         return perror("semaphore error, errno : "), printf("%d\n", errno), 10;
                 }
-                
+
                 calculate_player(&players[i], map);
                 draw_player(&players[i], map);
-
             }
         }
 
-        calculate_treasures(players);
+        if (!players_are_connected) {
+            usleep(1000 * 100 * ROUND_TIME_IN_SEC10TH);
+            continue;
+        }
+        else {
+            server_info.round_number++;
+            calculate_treasures(players);
+        }
 
-        for (int i = 0; i < CLIENTS; i++) { // Update player views
+        if (enemy.active_enemies > 0 && enemy.enemy_client_connected) {
 
-            if (players[i].is_connected) {
+            for (int i = 0; i < enemy.active_enemies; i++) {
+                create_enemy_map(enemy.request.positions[i], &enemy.request.maps[i], map);
+            }
 
-                update_player(&players[i], map, server_info.round_number);
+            // Request ready
 
-                while (sem_post(&players[i].map_calculated) != 0) {
-                    if (errno != EINTR)
-                        return perror("semaphore error, errno : "), printf("%d\n", errno), 10;
+            while (sem_post(&enemy.request_ready) != 0) {
+                if (errno != EINTR)
+                    return perror("semaphore error, errno : "), printf("%d\n", errno), 10;
+            }
+
+            // Wait for response from enemy client
+
+            while (sem_wait(&enemy.received_response) != 0) {
+                if (errno != EINTR)
+                    return perror("semaphore error, errno : "), printf("%d\n", errno), 10;
+            }
+
+            update_enemies(&enemy);
+
+            for (int i = 0; i < enemy.active_enemies; i++) {
+                for (int j = 0; j < CLIENTS; j++)
+                    check_player_on_enemy(&players[j], enemy.request.positions[i]);
+
+                draw_enemy(enemy.request.positions[i], map);
+            }
+        }
+
+        if (players_are_connected) {
+
+            for (int i = 0; i < CLIENTS; i++) { // Update player views
+
+                if (players[i].is_connected) {
+
+                    update_player(&players[i], map, server_info.round_number);
+
+                    while (sem_post(&players[i].map_calculated) != 0) {
+                        if (errno != EINTR)
+                            return perror("semaphore error, errno : "), printf("%d\n", errno), 10;
+                    }
                 }
             }
         }
 
-        server_info.round_number++;
+        // Respawn players killed by enemies
 
         print_info_server(interface.stat_window, &server_info);
         print_legend(interface.legend, 0, 1);
         update_windows_server(interface, map);
-
-        sleep(1);
+        refresh();
     }
 
     for (int i = 0; i < CLIENTS; i++) {
@@ -152,7 +204,11 @@ int main(int argc, char** argv)
         sem_destroy(&players[i].received_data);
     }
 
-    pthread_cancel(keyboard_input);
+    pthread_cancel(enemy_thr);
+
+    pthread_join(keyboard_input, NULL);
+    pthread_join(enemy_thr, NULL);
+
     endwin();
     return 0;
 }
