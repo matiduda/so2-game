@@ -41,6 +41,9 @@ int main(int argc, char** argv)
     start_color();
     init_colors();
 
+    printw("[__SERVER__]: Server initialized. Waiting for a player to start the game...\n");
+    refresh();
+
     ui interface;
     init_windows(&interface, world_size, 16, 50);
 

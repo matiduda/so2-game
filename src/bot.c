@@ -184,10 +184,7 @@ int main(int argc, char* argv)
         wrefresh(interface.legend);
         wrefresh(interface.game_window);
         refresh();
-        usleep(1000 * 100 * ROUND_TIME_IN_SEC10TH);
-
-        if (data.key == 'q' || data.key == 'Q')
-            break;
+        usleep(1000 * 100 * ROUND_TIME_IN_SEC10TH);;
 
         key = rand() % 5;
 
