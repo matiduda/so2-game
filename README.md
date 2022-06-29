@@ -1,10 +1,14 @@
 > :warning: **Important information**<br><br>This game was built as a project for an **Operating systems II** university course. If one uses any part of this code in their project, they can expect to have it not be accepted. One of the possible consequences of that action would be a **fail in the course**.<br><br>Please be careful!
 
+<p align="center">
+  <img src="screenshot.png" />
+</p>
+
 ## TODO:
 
 - [x] Enemy client
-- [ ] Bot client
-- [ ] Bot client - run away from enemy
+- [x] Bot client
+- [x] Bot client - run away from enemy
 - [x] Create dropped treasure after player death
 - [x] Server - draw players on server view
 - [x] Server - fix player info on disconnect
