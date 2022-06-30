@@ -127,6 +127,14 @@ struct enemy_response {
     int active_enemies;
 };
 
+typedef struct enemy_client_info {
+    struct enemy_request *response;
+    struct enemy_response *request;
+    point *enemy_found;
+    int id;
+    sem_t received_data;
+    sem_t calculated_data;
+} enemy_inf;
 // ------------------
 
 void init_colors();
@@ -138,5 +146,7 @@ int create_fifo_path(char* dest, int id, char* type);
 
 int kbhit(void);
 void* keyboard_input_func(void* pkey);
+
+void* handle_enemy(void* p_enemy_inf);
 
 #endif // COMMON_H
