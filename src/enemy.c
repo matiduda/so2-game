@@ -117,7 +117,25 @@ int main(int argc, char* argv)
 
     int key = 0;
 
-    point enemy_found[ENEMY_MAX_ENEMIES] = {0};
+    point enemy_found[ENEMY_MAX_ENEMIES] = { 0 };
+
+    // Start enemy threads
+
+    enemy_inf info[ENEMY_MAX_ENEMIES];
+
+    pthread_t enemy_thr[ENEMY_MAX_ENEMIES];
+
+    for (int i = 0; i < ENEMY_MAX_ENEMIES; i++) {
+        info[i].enemy_found = &enemy_found[i];
+        info[i].request = &request;
+        info[i].response = &response;
+        info[i].id = i;
+        sem_init(&info[i].received_data, 0, 0);
+        sem_init(&info[i].calculated_data, 0, 0);
+        pthread_create(&enemy_thr[i], NULL, handle_enemy, &info[i]);
+    }
+
+    int refreshed = 0;
 
     while (1) {
 
@@ -126,9 +144,12 @@ int main(int argc, char* argv)
         key_info.key = 0;
         pthread_mutex_unlock(&key_info.mutex);
 
-        if (key == 'q' || key == 'Q')
+        if (key == 'q' || key == 'Q') {
+            for (int w = 0; w < response.active_enemies; w++) {
+                pthread_cancel(enemy_thr[w]);
+            }
             break;
-
+        }
         // RECEIVE
         int ret = 0;
 
@@ -137,74 +158,19 @@ int main(int argc, char* argv)
         if (ret == -1)
             return close(client_request), perror("READ ERROR\n"), 9;
 
-        const int map_half = ENEMY_MAP_SIZE / 2;
-
         for (int i = 0; i < response.active_enemies; i++) {
 
-            int valid_move = 0;
-            while (!valid_move) {
-
-                point dpos = { 0 };
-                request.direction[i] = rand() % 5;
-                switch (request.direction[i]) {
-                case UP:
-                    dpos.y--;
-                    break;
-                case DOWN:
-                    dpos.y++;
-                    break;
-                case LEFT:
-                    dpos.x--;
-                    break;
-                case RIGHT:
-                    dpos.x++;
-                    break;
-                }
-                if (response.maps[i].map[map_half + dpos.y][map_half + dpos.x] == MAP_EMPTY)
-                    break;
-            }
-
-            enemy_found[i].y = -1;
-            enemy_found[i].x = -1;
-
-            // Check vertical and horizontal lines
-            for (int j = 0; j < ENEMY_MAP_SIZE; j++) {
-                if (response.maps[i].map[map_half][j] == '1' || response.maps[i].map[map_half][j] == '2' || response.maps[i].map[map_half][j] == '3' || response.maps[i].map[map_half][j] == '4') {
-                    enemy_found[i].y = j;
-                    enemy_found[i].x = map_half;
-                    break;
-                }
-                if (response.maps[i].map[j][map_half] == '1' || response.maps[i].map[j][map_half] == '2' || response.maps[i].map[j][map_half] == '3' || response.maps[i].map[j][map_half] == '4') {
-                    enemy_found[i].y = map_half;
-                    enemy_found[i].x = j;
-                    break;
-                }
-            }
-
-            if (enemy_found[i].x != -1) {
-                if (enemy_found[i].y < map_half && response.maps[i].map[map_half][map_half - 1] != MAP_WALL) {
-                    request.direction[i] = LEFT;
-                    continue;
-                }
-                if (enemy_found[i].y > map_half && response.maps[i].map[map_half][map_half + 1] != MAP_WALL) {
-                    request.direction[i] = RIGHT;
-                    continue;
-                }
-                if (enemy_found[i].x < map_half && response.maps[i].map[map_half - 1][map_half] != MAP_WALL) {
-                    request.direction[i] = UP;
-                    continue;
-                }
-                if (enemy_found[i].x > map_half && response.maps[i].map[map_half + 1][map_half] != MAP_WALL) {
-                    request.direction[i] = DOWN;
-                    continue;
-                }
-            }
+            sem_post(&info[i].received_data);
+            sem_wait(&info[i].calculated_data);
         }
 
         // DRAW
 
-        werase(stdscr);
-        refresh();
+        if (!refreshed) {
+            werase(stdscr);
+            refresh();
+            refreshed = 1;
+        }
 
         for (int w = 0; w < response.active_enemies; w++) {
             response.maps[w].map[ENEMY_MAP_SIZE / 2][ENEMY_MAP_SIZE / 2] = MAP_BEAST;
@@ -247,7 +213,7 @@ int main(int argc, char* argv)
                         }
                     }
 
-                    if(i == enemy_found[w].x && j == enemy_found[w].y)
+                    if (i == enemy_found[w].x && j == enemy_found[w].y)
                         wattron(beast_view[w], COLOR_PAIR(CAMPSITE));
 
                     mvwprintw(beast_view[w], i + 2, j + 1, "%c", c);
@@ -262,14 +228,13 @@ int main(int argc, char* argv)
         }
 
         refresh();
-    
+
         // SEND
 
         while (ret = write(client_request, &request, sizeof(struct enemy_response)) == -1 && errno == EINTR)
             continue;
         if (ret == -1)
             return close(client_request), perror("WRITE ERROR\n"), 9;
-
     }
 
     close(client_request);
