@@ -6,9 +6,9 @@
 
 ## How to build
 
-To build the game you have to have `ncurses` library installed. You can do this by using the following command
+To build the game you have to have `ncurses` library installed, and also `make` and `gcc` compiler. You can do this by using the following command
 ```sh
-sudo apt-get install libncurses5-dev
+sudo apt-get install -y libncurses5-dev make gcc
 ```
 
 To build the game, simply run
